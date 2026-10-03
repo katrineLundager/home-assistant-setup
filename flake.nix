@@ -39,7 +39,7 @@
           tokenFile = lib.mkOption {
             # String, not `path`, so the file is NOT imported into the Nix store.
             type = lib.types.nullOr lib.types.str;
-            default = null;
+            default = "/var/lib/ha-stack/clickhouse-ingestor.env";
             example = "/var/lib/ha-stack/clickhouse-ingestor.env";
             description = ''
               Persistent host path (as a string) to a file whose contents
