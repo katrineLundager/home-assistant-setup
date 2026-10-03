@@ -49,7 +49,7 @@
     };
 
 
-    lovelaceConfigFile = ./home-assistant-dashboard.yaml;
+    #lovelaceConfigFile = ./home-assistant-dashboard.yaml;
 
     config = {
       default_config = { };
