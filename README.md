@@ -77,9 +77,8 @@ containers.ha-stack = {
 Create the HA long-lived access token on the host:
 
 ```bash
-sudo tee /run/secrets/clickhouse-ingestor.env <<EOF
-SUPERVISOR_TOKEN=your_long_lived_ha_token
-EOF
+sudo mkdir -p /run/secrets
+echo "SUPERVISOR_TOKEN=your_long_lived_ha_token" | sudo tee /run/secrets/clickhouse-ingestor.env
 ```
 
 Then rebuild:
