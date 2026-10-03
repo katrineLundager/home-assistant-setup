@@ -79,31 +79,52 @@ reboot, since `/run` is tmpfs.
 ### Providing the HA access token
 
 The ingestor needs a long-lived HA access token. The module's
-`ha-stack-secret.service` writes it to `/run/secrets/clickhouse-ingestor.env`
-at boot (and after each rebuild), so it survives the tmpfs `/run` wipe.
+`ha-stack-secret.service` copies it from a persistent host file to
+`/run/secrets/clickhouse-ingestor.env` at boot (and after each rebuild),
+so it survives the tmpfs `/run` wipe.
 
-Choose one of two options in your NixOS config:
+#### 1. Create a long-lived access token in Home Assistant
 
-**Recommended — `tokenFile` (token stays out of the Nix store):**
+1. Open `http://localhost:8123` and log in.
+2. Click your profile picture (bottom-left).
+3. Scroll to **Long-Lived Access Tokens** (bottom of the page).
+4. Click **Create Token**, give it a name (e.g. `clickhouse-ingestor`).
+5. Copy the token — it is shown only once.
 
-```bash
-# Create once on the host:
-sudo install -d -m 700 /var/lib/ha-stack
-sudo tee /var/lib/ha-stack/clickhouse-ingestor.env >/dev/null <<EOF
-SUPERVISOR_TOKEN=your_long_lived_ha_token
-EOF
+#### 2. Write it to a file on the host
+
+```fish
+sudo mkdir -p /var/lib/ha-stack
+echo "SUPERVISOR_TOKEN=<paste your token here>" | sudo tee /var/lib/ha-stack/clickhouse-ingestor.env >/dev/null
 sudo chmod 600 /var/lib/ha-stack/clickhouse-ingestor.env
 ```
 
-```nix
-services.ha-stack.tokenFile = "/var/lib/ha-stack/clickhouse-ingestor.env";
-```
-
-**Quick — `supervisorToken` (token ends up in the world-readable Nix store):**
+The module defaults `tokenFile` to this path, so no extra NixOS config is
+needed. If you want a different path, set it in your system config:
 
 ```nix
-services.ha-stack.supervisorToken = "your_long_lived_ha_token";
+services.ha-stack.tokenFile = "/var/lib/ha-stack/clickhouse-ingestor.env"
 ```
+
+
+#### 3. Apply and verify
+
+```bash
+sudo nixos-rebuild switch
+sudo cat /run/secrets/clickhouse-ingestor.env   # should show SUPERVISOR_TOKEN=<long string>
+```
+
+### Adding the Nordpool integration
+
+The Nordpool custom component is packaged via `nordpool.nix` and bundled
+into the container automatically. To activate it:
+
+1. Open `http://localhost:8123`.
+2. Go to **Settings → Devices & Services → Add Integration**.
+3. Search for **Nordpool** and select it.
+4. Configure the region and currency (e.g. DK1, DKK).
+5. Entities like `sensor.nordpool_kwh_dk1_dkk_3_10_0_raw_today` will appear
+   and their state changes will be captured by the ingestor automatically.
 
 ### Start
 
