@@ -13,7 +13,7 @@ Fronius inverter ──> Home Assistant ──(WebSocket: state_changed)──> 
 ```
 
 - **Home Assistant** — collects data from Fronius, Nordpool, etc.
-- **ClickHouse Ingestor** — streams HA state changes into ClickHouse via WebSocket
+- **ClickHouse Ingestor** — streams HA state changes into ClickHouse via WebSocket. Adapted from [apbodrov/clickhouse-hassio](https://github.com/apbodrov/clickhouse-hassio) (ClickHouse Ingestor add-on)
 - **ClickHouse** — column-store database for long-term storage
 
 ## Status
