@@ -72,16 +72,40 @@ containers.ha-stack = {
 };
 ```
 
-### Before first start
+Without the module, you must create `/run/secrets/clickhouse-ingestor.env`
+manually on the host before the container starts — and recreate it after every
+reboot, since `/run` is tmpfs.
 
-Create the HA long-lived access token on the host:
+### Providing the HA access token
+
+The ingestor needs a long-lived HA access token. The module's
+`ha-stack-secret.service` writes it to `/run/secrets/clickhouse-ingestor.env`
+at boot (and after each rebuild), so it survives the tmpfs `/run` wipe.
+
+Choose one of two options in your NixOS config:
+
+**Recommended — `tokenFile` (token stays out of the Nix store):**
 
 ```bash
-sudo mkdir -p /run/secrets
-echo "SUPERVISOR_TOKEN=your_long_lived_ha_token" | sudo tee /run/secrets/clickhouse-ingestor.env
+# Create once on the host:
+sudo install -d -m 700 /var/lib/ha-stack
+sudo tee /var/lib/ha-stack/clickhouse-ingestor.env >/dev/null <<EOF
+SUPERVISOR_TOKEN=your_long_lived_ha_token
+EOF
+sudo chmod 600 /var/lib/ha-stack/clickhouse-ingestor.env
 ```
 
-Then rebuild:
+```nix
+services.ha-stack.tokenFile = "/var/lib/ha-stack/clickhouse-ingestor.env";
+```
+
+**Quick — `supervisorToken` (token ends up in the world-readable Nix store):**
+
+```nix
+services.ha-stack.supervisorToken = "your_long_lived_ha_token";
+```
+
+### Start
 
 ```bash
 sudo nixos-rebuild switch
