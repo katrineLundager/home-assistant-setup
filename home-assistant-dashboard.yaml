@@ -1,0 +1,138 @@
+title: My Home 
+views:
+  - title: Energy
+    path: energy
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: ApexCharts-Card
+          show_states: true
+          colorize_states: true
+        graph_span: 48h
+        span:
+          start: hour
+          offset: "-12h"
+        now:
+          show: true
+          label: Now
+        hours_12: false
+        series:
+          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
+            extend_to: false
+            name: Current prices
+            data_generator: |
+              const rawToday = entity.attributes.raw_today || [];
+              const rawTomorrow = entity.attributes.raw_tomorrow || [];
+              const now = new Date();
+              const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+              const midnight = new Date(now.getTime());
+              midnight.setHours(23,59,0);
+  
+              const historical = rawToday
+              .filter(item => {
+                const start = new Date(item.start);
+                return start >= twelveHoursAgo && start <= midnight
+              })
+              .map(item => [new Date(item.start).getTime(), item.value]);
+
+
+              return [...historical];
+
+
+          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
+            extend_to: false
+            name: Tomorrows prices
+            data_generator: |
+              const rawTomorrow = entity.attributes.raw_tomorrow || [];
+
+              const forecast = rawTomorrow
+                .slice(0, 200)
+                .map(item => [new Date(item.start).getTime(), item.value]);
+  
+              return [...forecast]
+
+
+
+  - title: Energy 2
+    path: energy2
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: ApexCharts-Card
+          show_states: true
+          colorize_states: true
+        graph_span: 48h
+        span:
+          start: hour
+          offset: "-12h"
+        now:
+          show: true
+          label: Now
+        hours_12: false
+        series:
+          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
+            extend_to: false
+            name: Current prices
+            data_generator: |
+              const rawToday = entity.attributes.raw_today || [];
+              const rawTomorrow = entity.attributes.raw_tomorrow || [];
+              const now = new Date();
+              const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+              const midnight = new Date(now.getTime());
+              midnight.setHours(23,59,0);
+  
+              const historical = rawToday
+              .filter(item => {
+                const start = new Date(item.start);
+                return start >= twelveHoursAgo && start <= midnight
+              })
+              .map(item => [new Date(item.start).getTime(), item.value]);
+
+
+              return [...historical];
+
+
+          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
+            extend_to: false
+            name: Tomorrows prices
+            data_generator: |
+              const rawTomorrow = entity.attributes.raw_tomorrow || [];
+
+              const forecast = rawTomorrow
+                .slice(0, 200)
+                .map(item => [new Date(item.start).getTime(), item.value]);
+  
+              return [...forecast]
+
+
+  - title: Electricity
+    cards:
+      # Raw spot price for the day
+      - type: custom:mini-graph-card
+        name: Spot price (DK1)
+        entities:
+          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
+            name: Now
+        hours_to_show: 24
+        points_per_hour: 12
+        unit: DKK/kWh
+        show:
+          fill: fade
+
+          # Consumption vs price over time
+      - type: statistics-graph
+        title: Consumption (sum per day)
+        entities:
+          - sensor.main_energy
+        stat_type: sum
+        period: day
+        days_to_show: 14
+
+        # History of the price sensor itself
+      - type: history-graph
+        title: Price history
+        hours_to_show: 48
+        entities:
+          - sensor.nordpool_kwh_dk1_dkk_3_10_0
