@@ -36,24 +36,24 @@
     ];
 # Un-comment this section the first time you build (otherwise it does not produce
 # the symlink to ui_lovelace.yaml in /var/lib/hass/.
-    lovelaceConfig = {
-      title = "My Home";
-      views = [{
-        title = "Energy";
-        path = "energy";
-        cards = [
-        { type = "markdown"; title = "Test Card"; content = "# Dashboard is working!"; }
-        { type = "entities"; title = "All entities"; entities = []; }
-        ];
-      }];
-    };
+#    lovelaceConfig = {
+#      title = "My Home";
+#      views = [{
+#        title = "Energy";
+#        path = "energy";
+#        cards = [
+#        { type = "markdown"; title = "Test Card"; content = "# Dashboard is working!"; }
+#        { type = "entities"; title = "All entities"; entities = []; }
+#        ];
+#      }];
+#    };
 
 
-    #lovelaceConfigFile = ./home-assistant-dashboard.yaml;
+    lovelaceConfigFile = ./home-assistant-dashboard.yaml;
 
     config = {
       default_config = { };
-/*
+
       lovelace.dashboards.nixos-lovelace = {
         mode = "yaml";
         filename = "ui-lovelace.yaml";
@@ -61,7 +61,7 @@
         icon = "mdi:view-dashboard";
         show_in_sidebar = true;
       };
-  */  };
+    };
   };
 
   # ── ClickHouse ──────────────────────────────────────────────────
