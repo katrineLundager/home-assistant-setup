@@ -1,42 +1,19 @@
-# Server configuration for Home Assistant + ClickHouse + ingestor.
-# Deploy with: sudo nixos-rebuild switch --flake .#ha-server
+# Inner NixOS config for the ha-stack container.
+# Bundles Home Assistant + ClickHouse + ingestor so all three
+# communicate over localhost inside the container.
+#
+# This file is imported by flake.nix's nixosModules.default, or can
+# be used directly:
+#   containers.ha-stack.config = import ./container.nix { inherit pkgs lib; };
 
-{ config, pkgs, lib, ... }:
+{ pkgs, lib, ... }:
 
 {
-  imports = [
-    ./hardware-configuration.nix
-  ];
+  system.stateVersion = "26.05";
 
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
-  networking.hostName = "ha-server";
-  networking.networkmanager.enable = true;
+  networking.firewall.allowedTCPPorts = [ 8123 ];
 
   time.timeZone = "Europe/Copenhagen";
-
-  i18n.defaultLocale = "en_GB.UTF-8";
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "da_DK.UTF-8";
-    LC_IDENTIFICATION = "da_DK.UTF-8";
-    LC_MEASUREMENT = "da_DK.UTF-8";
-    LC_MONETARY = "da_DK.UTF-8";
-    LC_NAME = "da_DK.UTF-8";
-    LC_NUMERIC = "da_DK.UTF-8";
-    LC_PAPER = "da_DK.UTF-8";
-    LC_TELEPHONE = "da_DK.UTF-8";
-    LC_TIME = "da_DK.UTF-8";
-  };
-
-  users.users.katrine = {
-    isNormalUser = true;
-    description = "Katrine";
-    extraGroups = [ "wheel" "networkmanager" ];
-  };
-
-  nixpkgs.config.allowUnfree = true;
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # ── Home Assistant ──────────────────────────────────────────────
   services.home-assistant = {
@@ -74,10 +51,11 @@
   };
 
   # ── ClickHouse ──────────────────────────────────────────────────
+  # HTTP port is 8124 (not 8123) to avoid conflict with HA inside the container.
   services.clickhouse = {
     enable = true;
     serverConfig = {
-      http_port = 8123;
+      http_port = 8124;
       tcp_port = 9000;
       listen_host = "127.0.0.1";
     };
@@ -85,10 +63,7 @@
 
   # ── ClickHouse Ingestor ─────────────────────────────────────────
   # Streams HA state_changed events into ClickHouse via WebSocket.
-  # Create the env file on the server:
-  #   sudo tee /run/secrets/clickhouse-ingestor.env <<EOF
-  #   SUPERVISOR_TOKEN=your_long_lived_ha_token
-  #   EOF
+  # Token is mounted from the host via bindMount in flake.nix.
   systemd.services.clickhouse-ingestor = {
     description = "Stream Home Assistant state changes into ClickHouse";
     wantedBy = [ "multi-user.target" ];
@@ -102,11 +77,11 @@
     };
 
     environment = {
-      # Connect to HA WebSocket directly (no Supervisor on NixOS)
+      # HA WebSocket inside the container
       HA_WS_URL = "ws://localhost:8123/api/websocket";
-      # ClickHouse connection
+      # ClickHouse HTTP inside the container (port 8124, not 8123)
       CLICKHOUSE_HOST = "127.0.0.1";
-      CLICKHOUSE_PORT = "8123";
+      CLICKHOUSE_PORT = "8124";
       CLICKHOUSE_USER = "default";
       CLICKHOUSE_PASSWORD = "";
       CLICKHOUSE_DATABASE = "homeassistant";
@@ -118,17 +93,4 @@
       # EXCLUDE_ENTITIES = "sensor.bad_entity,switch.noisy";
     };
   };
-
-  # ── Packages ───────────────────────────────────────────────────
-  environment.systemPackages = with pkgs; [
-    git
-    vim
-    clickhouse
-  ];
-
-  programs.git.enable = true;
-
-  services.openssh.enable = true;
-
-  system.stateVersion = "26.05";
 }

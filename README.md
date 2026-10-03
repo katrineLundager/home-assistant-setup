@@ -1,6 +1,6 @@
 # home-assistant-setup
 
-NixOS flake for running Home Assistant with long-term state history stored in ClickHouse.
+NixOS flake module that bundles Home Assistant + ClickHouse + ingestor into a single declarative container. Import it on any NixOS machine with one line.
 
 ## Purpose
 
@@ -9,7 +9,19 @@ Stores Home Assistant entity state changes (e.g. Fronius inverter data at 5s int
 ## Architecture
 
 ```
-Fronius inverter ──> Home Assistant ──(WebSocket: state_changed)──> ClickHouse Ingestor ──(HTTP INSERT)──> ClickHouse
+┌─ Host (any NixOS machine) ──────────────────────────────┐
+│  configuration.nix                                      │
+│    modules = [ ha-stack.nixosModules.default ]          │
+│                                                         │
+│    ┌───────────────────────────────────────────┐        │
+│    │ Container: ha-stack                       │        │
+│    │  ├─ Home Assistant  (port 8123)            │        │
+│    │  ├─ ClickHouse      (port 8124 internal)   │        │
+│    │  └─ Ingestor        (localhost websocket)  │        │
+│    │  All three talk via localhost inside      │        │
+│    └────────────────┬──────────────────────────┘        │
+│                     │ port 8123 forwarded to host        │
+└─────────────────────┴───────────────────────────────────┘
 ```
 
 - **Home Assistant** — collects data from Fronius, Nordpool, etc.
@@ -20,24 +32,70 @@ Fronius inverter ──> Home Assistant ──(WebSocket: state_changed)──> 
 
 Work in progress. Not yet tested on the target server.
 
-## Deploy
+## Usage
+
+### With a flake (recommended)
+
+Add to your `flake.nix`:
+
+```nix
+inputs = {
+  nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+  ha-stack.url = "github:katrineLundager/home-assistant-setup";
+};
+
+outputs = { self, nixpkgs, ha-stack, ... }: {
+  nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+    modules = [
+      ./configuration.nix
+      ha-stack.nixosModules.default
+    ];
+  };
+};
+```
+
+### Without a flake
+
+```nix
+containers.ha-stack = {
+  autoStart = true;
+  forwardPorts = [
+    { containerPort = 8123; hostPort = 8123; protocol = "tcp"; }
+  ];
+  bindMounts = {
+    "/run/secrets/clickhouse-ingestor.env" = {
+      hostPath = "/run/secrets/clickhouse-ingestor.env";
+      isReadOnly = true;
+    };
+  };
+  config = import ./path/to/container.nix { inherit pkgs lib; };
+};
+```
+
+### Before first start
+
+Create the HA long-lived access token on the host:
 
 ```bash
-git clone <repo-url> home-assistant-setup
-cd home-assistant-setup
-
-# Replace the placeholder hardware config with the real one:
-sudo nixos-generate-config
-cp /etc/nixos/hardware-configuration.nix ./hardware-configuration.nix
-
-# Create the HA long-lived token:
 sudo tee /run/secrets/clickhouse-ingestor.env <<EOF
 SUPERVISOR_TOKEN=your_long_lived_ha_token
 EOF
-
-# Build and switch:
-sudo nixos-rebuild switch --flake .#ha-server
-
-# Updates:
-git pull && sudo nixos-rebuild switch --flake .#ha-server
 ```
+
+Then rebuild:
+
+```bash
+sudo nixos-rebuild switch
+```
+
+HA will be available at `http://localhost:8123`.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `flake.nix` | Exposes `nixosModules.default` — the container definition |
+| `container.nix` | Inner container config (HA + ClickHouse + ingestor) |
+| `nordpool.nix` | Nordpool custom component package |
+| `clickhouse-ingestor.nix` | Ingestor package (from apbodrov/clickhouse-hassio) |
+| `home-assistant-dashboard.yaml` | Lovelace dashboard config |
