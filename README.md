@@ -134,6 +134,15 @@ sudo nixos-rebuild switch
 
 HA will be available at `http://localhost:8123`.
 
+
+
+## Observe data coming in to clickhouse DB
+To observe wether the database and ingestor are correctly setup you can query some data from the database:
+```fish
+curl -s 'http://127.0.0.1:8124/?database=homeassistant&query=SELECT+entity_id,state,last_updated+FROM+states+ORDER+BY+last_updated+DESC+LIMIT+10+FORMAT+PrettyCompact'
+```
+
+
 ## Files
 
 | File | Purpose |

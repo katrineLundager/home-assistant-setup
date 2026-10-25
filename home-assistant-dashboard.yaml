@@ -136,3 +136,30 @@ views:
         hours_to_show: 48
         entities:
           - sensor.nordpool_kwh_dk1_dkk_3_10_0
+
+  # ── ClickHouse-backed charts ────────────────────────────────────
+  # Data comes from sensor.clickhouse_daily_consumption, a command_line
+  # sensor (see container.nix) that queries ClickHouse server-side and
+  # exposes `day` / `consumption` parallel arrays as attributes. The
+  # data_generator reads them synchronously — no browser fetch / CORS.
+  - title: ClickHouse
+    path: clickhouse
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Daily consumption (ClickHouse)
+        graph_span: 14d
+        span:
+          start: day
+        series:
+          - entity: sensor.clickhouse_daily_consumption
+            name: Consumption
+            type: column
+            data_generator: |
+              const days = entity.attributes.day || [];
+              const vals = entity.attributes.consumption || [];
+              return days.map((d, i) => [
+                new Date(d + 'T00:00:00').getTime(),
+                Number(vals[i])
+              ]);
