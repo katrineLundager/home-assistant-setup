@@ -132,18 +132,20 @@
     };
     script = ''
       . /run/secrets/clickhouse-passwords.env
+      # clickhouse-client is not on the unit's PATH; use the store path directly.
+      CH="${pkgs.clickhouse}/bin/clickhouse-client"
 
       for i in $(seq 1 30); do
-        clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "SELECT 1" 2>/dev/null && break
+        "$CH" --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "SELECT 1" 2>/dev/null && break
         sleep 1
       done
-      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "SELECT 1" || { echo "ClickHouse not ready"; exit 1; }
+      "$CH" --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "SELECT 1" || { echo "ClickHouse not ready"; exit 1; }
 
-      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query \
+      "$CH" --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query \
         "CREATE USER IF NOT EXISTS reader IDENTIFIED WITH scram_sha256_password BY '""$READER_PASSWORD""'"
-      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query \
+      "$CH" --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query \
         "ALTER USER reader IDENTIFIED WITH scram_sha256_password BY '""$READER_PASSWORD""'"
-      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "GRANT SELECT ON *.* TO reader"
+      "$CH" --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "GRANT SELECT ON *.* TO reader"
       echo "Reader user created/updated"
 
     '';
