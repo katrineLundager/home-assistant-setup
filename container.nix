@@ -15,13 +15,6 @@
 
   time.timeZone = "Europe/Copenhagen";
 
-  bindMounts = {
-    "/run/secrets/clickhouse-passwords.env" = {
-      hostPath = "/run/secrets/clickhouse-passwords.env";
-      isReadOnly = true;
-    };
-  };
-
   # ── Home Assistant ──────────────────────────────────────────────
   services.home-assistant = {
     enable = true;
