@@ -66,64 +66,70 @@
       #
       # The sensors below expose other history the same way: sun elevation,
       # outdoor temperature and the nordpool spot price.
+      # NOTE: HA's command_line schema wants one list item per sensor, with
+      # `sensor` being that sensor's config dict (not a list of sensors).
       command_line = [
         {
-          sensor = [
-            {
-              name = "ClickHouse Daily Consumption";
-              command = ''
-                ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.main_energy' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day ORDER BY day"
-              '';
-              value_template = "{{ value_json.consumption | default([]) | sum }}";
-              json_attributes = [
-                "day"
-                "consumption"
-              ];
-              scan_interval = 600;
-            }
+          sensor = {
+            name = "ClickHouse Daily Consumption";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.main_energy' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day ORDER BY day"
+            '';
+            value_template = "{{ value_json.consumption | default([]) | sum }}";
+            json_attributes = [
+              "day"
+              "consumption"
+            ];
+            scan_interval = 600;
+          };
+        }
+        {
+          sensor = {
             # Hourly average sun elevation, from sun.sun's `elevation`
             # attribute (the ingestor stores full attributes as JSON).
-            {
-              name = "ClickHouse Sun Elevation";
-              command = ''
-                ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'elevation')) AS elevation FROM homeassistant.states WHERE entity_id = 'sun.sun' AND JSONHas(attributes, 'elevation') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
-              '';
-              value_template = "{{ value_json.elevation | default([]) | last | default(0) }}";
-              json_attributes = [
-                "hour"
-                "elevation"
-              ];
-              scan_interval = 600;
-            }
+            name = "ClickHouse Sun Elevation";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'elevation')) AS elevation FROM homeassistant.states WHERE entity_id = 'sun.sun' AND JSONHas(attributes, 'elevation') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
+            '';
+            value_template = "{{ value_json.elevation | default([]) | last | default(0) }}";
+            json_attributes = [
+              "hour"
+              "elevation"
+            ];
+            scan_interval = 600;
+          };
+        }
+        {
+          sensor = {
             # Hourly average outdoor temperature. sun.sun has no temperature
             # attribute — it lives on the weather entity.
-            {
-              name = "ClickHouse Temperature";
-              command = ''
-                ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'temperature')) AS temperature FROM homeassistant.states WHERE entity_id = 'weather.forecast_home' AND JSONHas(attributes, 'temperature') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
-              '';
-              value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
-              json_attributes = [
-                "hour"
-                "temperature"
-              ];
-              scan_interval = 600;
-            }
+            name = "ClickHouse Temperature";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'temperature')) AS temperature FROM homeassistant.states WHERE entity_id = 'weather.forecast_home' AND JSONHas(attributes, 'temperature') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
+            '';
+            value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
+            json_attributes = [
+              "hour"
+              "temperature"
+            ];
+            scan_interval = 600;
+          };
+        }
+        {
+          sensor = {
             # Hourly average nordpool spot price. The sensor's state is the
             # current price and changes hourly, so state_float is the series.
-            {
-              name = "ClickHouse Nordpool Price";
-              command = ''
-                ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
-              '';
-              value_template = "{{ value_json.price | default([]) | last | default(0) }}";
-              json_attributes = [
-                "hour"
-                "price"
-              ];
-              scan_interval = 600;
-            }
-          ];
+            name = "ClickHouse Nordpool Price";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
+            '';
+            value_template = "{{ value_json.price | default([]) | last | default(0) }}";
+            json_attributes = [
+              "hour"
+              "price"
+            ];
+            scan_interval = 600;
+          };
         }
       ];
 
