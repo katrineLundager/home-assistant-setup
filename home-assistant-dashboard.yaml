@@ -151,7 +151,10 @@ views:
           title: Daily consumption (ClickHouse)
         graph_span: 14d
         span:
-          start: day
+          end: day
+        now:
+          show: true
+          label: Now
         series:
           - entity: sensor.clickhouse_daily_consumption
             name: Consumption
@@ -169,7 +172,10 @@ views:
           title: Sun elevation (ClickHouse)
         graph_span: 7d
         span:
-          start: day
+          end: day
+        now:
+          show: true
+          label: Now
         series:
           - entity: sensor.clickhouse_sun_elevation
             name: Elevation (°)
@@ -186,7 +192,10 @@ views:
           title: Temperature (ClickHouse)
         graph_span: 7d
         span:
-          start: day
+          end: day
+        now:
+          show: true
+          label: Now
         series:
           - entity: sensor.clickhouse_temperature
             name: Temperature (°C)
@@ -203,7 +212,10 @@ views:
           title: Spot price (ClickHouse)
         graph_span: 7d
         span:
-          start: day
+          end: day
+        now:
+          show: true
+          label: Now
         series:
           - entity: sensor.clickhouse_nordpool_price
             name: Price (DKK/kWh)
