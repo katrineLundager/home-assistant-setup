@@ -213,6 +213,36 @@ To change a password, edit `/var/lib/secrets/clickhouse-passwords.env`, then
 restart `clickhouse-secrets.service` and the `ha-stack` container (ClickHouse
 reads users.d only at startup).
 
+### Dashboard charts backed by ClickHouse
+
+The ingestor stores every state change with its full attributes as JSON
+(`homeassistant.states.attributes`), so history is available for everything —
+sun elevation, weather, prices — back to when ingestion started. No ingestor
+change is needed for this; the charts query the stored data.
+
+Three `command_line` sensors (in `container.nix`) query ClickHouse over
+localhost as the read-only `lovelace` user and expose parallel arrays as
+attributes (hourly averages over the last 7 days, hours in Europe/Copenhagen):
+
+| Sensor | Queries |
+|---|---|
+| `sensor.clickhouse_sun_elevation` | `avg(elevation)` from `sun.sun` attributes |
+| `sensor.clickhouse_temperature` | `avg(temperature)` from `weather.forecast_home` attributes |
+| `sensor.clickhouse_nordpool_price` | `avg(state_float)` of `sensor.nordpool_kwh_dk1_dkk_3_10_0` |
+
+The **ClickHouse** tab of the "A Hus!" dashboard (`home-assistant-dashboard.yaml`)
+renders them with `apexcharts-card` charts: daily consumption, sun elevation,
+temperature and spot price.
+
+Notes:
+
+- `sun.sun` has no temperature attribute — temperature comes from the weather
+  entity (`weather.forecast_home`).
+- The nordpool sensor's state is the current spot price and changes hourly, so
+  its `state_float` history is the price series.
+- Hours are formatted server-side in Europe/Copenhagen, so chart times match
+  local time (the raw `last_updated` column is stored in UTC).
+
 ### Adding the Nordpool integration
 
 The Nordpool custom component is packaged via `nordpool.nix` and bundled

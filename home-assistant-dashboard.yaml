@@ -138,10 +138,10 @@ views:
           - sensor.nordpool_kwh_dk1_dkk_3_10_0
 
   # ── ClickHouse-backed charts ────────────────────────────────────
-  # Data comes from sensor.clickhouse_daily_consumption, a command_line
-  # sensor (see container.nix) that queries ClickHouse server-side and
-  # exposes `day` / `consumption` parallel arrays as attributes. The
-  # data_generator reads them synchronously — no browser fetch / CORS.
+  # Data comes from command_line sensors (see container.nix) that query
+  # ClickHouse server-side and expose parallel arrays as attributes
+  # (day/consumption, hour/elevation, hour/temperature, hour/price).
+  # The data_generators read them synchronously — no browser fetch / CORS.
   - title: ClickHouse
     path: clickhouse
     cards:
@@ -161,5 +161,56 @@ views:
               const vals = entity.attributes.consumption || [];
               return days.map((d, i) => [
                 new Date(d + 'T00:00:00').getTime(),
+                Number(vals[i])
+              ]);
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Sun elevation (ClickHouse)
+        graph_span: 7d
+        span:
+          start: day
+        series:
+          - entity: sensor.clickhouse_sun_elevation
+            name: Elevation (°)
+            data_generator: |
+              const hours = entity.attributes.hour || [];
+              const vals = entity.attributes.elevation || [];
+              return hours.map((h, i) => [
+                new Date(h).getTime(),
+                Number(vals[i])
+              ]);
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Temperature (ClickHouse)
+        graph_span: 7d
+        span:
+          start: day
+        series:
+          - entity: sensor.clickhouse_temperature
+            name: Temperature (°C)
+            data_generator: |
+              const hours = entity.attributes.hour || [];
+              const vals = entity.attributes.temperature || [];
+              return hours.map((h, i) => [
+                new Date(h).getTime(),
+                Number(vals[i])
+              ]);
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Spot price (ClickHouse)
+        graph_span: 7d
+        span:
+          start: day
+        series:
+          - entity: sensor.clickhouse_nordpool_price
+            name: Price (DKK/kWh)
+            data_generator: |
+              const hours = entity.attributes.hour || [];
+              const vals = entity.attributes.price || [];
+              return hours.map((h, i) => [
+                new Date(h).getTime(),
                 Number(vals[i])
               ]);
