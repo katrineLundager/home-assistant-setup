@@ -104,18 +104,24 @@
       listen_host = "127.0.0.1";
     };
 
-    # Read-only user used by the command_line sensor below. The ingestor
-    # still uses the passwordless `default` user over localhost for INSERTs;
-    # `lovelace` can only SELECT, as a least-privilege precaution.
+    # Read-only user used by the command_line sensor below. It is passwordless,
+    # but the server only listens on 127.0.0.1 and `lovelace` can only SELECT,
+    # as a least-privilege precaution. ClickHouse 26.x requires every
+    # config-defined user to declare an authentication type, hence `no_password`.
     usersConfig = {
       profiles.readonly.readonly = 1;
       users.lovelace.profile = "readonly";
+      users.lovelace.no_password = "";
       users.default.networks.ip = "127.0.0.1";
 
     };
   };
 
-  # Defining the passwords for the database.
+  # Create the read-only `reader` user. The `default` user's password is NOT
+  # set here: it is defined in the stock users.xml, and config-managed users
+  # cannot be modified via SQL. Its password comes from the bind-mounted
+  # /etc/clickhouse-server/users.d/50-runtime-passwords.yaml instead, so this
+  # oneshot authenticates as `default` with DEFAULT_PASSWORD from the start.
   systemd.services.clickhouse-set-passwords = {
     description = "Set ClickHouse user paswords from /run/Secrets";
     after = [ "clickhouse.service" ];
@@ -128,20 +134,18 @@
       . /run/secrets/clickhouse-passwords.env
 
       for i in $(seq 1 30); do
-        clickhouse-client --host 127.0.0.1 --query "SELECT 1" 2>/dev/null && break
+        clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "SELECT 1" 2>/dev/null && break
         sleep 1
       done
-      clickhouse-client --host 127.0.0.1 --query "SELECT 1" || { echo "ClickHouse not ready"; exit 1; }
+      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "SELECT 1" || { echo "ClickHouse not ready"; exit 1; }
 
-      clickhouse-client --host 127.0.0.1 --query \
-        "CREATE USER IF NOT EXISTS reader IDENTIFIED WITH plaintext_password BY '""$READER_PASSWORD""'"
-      clickhouse-client --host 127.0.0.1 --query \
-        "ALTER USER reader IDENTIFIED WITH plaintext_password BY '""$READER_PASSWORD""'"
-      clickhouse-client --host 127.0.0.1 --query "GRANT SELECT ON *.* TO reader"
+      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query \
+        "CREATE USER IF NOT EXISTS reader IDENTIFIED WITH scram_sha256_password BY '""$READER_PASSWORD""'"
+      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query \
+        "ALTER USER reader IDENTIFIED WITH scram_sha256_password BY '""$READER_PASSWORD""'"
+      clickhouse-client --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "GRANT SELECT ON *.* TO reader"
       echo "Reader user created/updated"
 
-      clickhouse-client --host 127.0.0.1 --query \
-        "ALTER USER default IDENTIFIED WITH plaintext_password BY '""$READER_PASSWORD""'"
     '';
   };
 
@@ -171,7 +175,9 @@
       CLICKHOUSE_HOST = "127.0.0.1";
       CLICKHOUSE_PORT = "8124";
       CLICKHOUSE_USER = "default";
-      CLICKHOUSE_PASSWORD = "";
+      # CLICKHOUSE_PASSWORD comes from /run/secrets/clickhouse-ingestor.env
+      # (EnvironmentFile). Set it to the same value as DEFAULT_PASSWORD in
+      # /var/lib/secrets/clickhouse-passwords.env.
       CLICKHOUSE_DATABASE = "homeassistant";
       CLICKHOUSE_TABLE = "states";
       # Tuning
