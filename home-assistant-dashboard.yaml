@@ -160,8 +160,8 @@ views:
             name: Consumption
             type: column
             data_generator: |
-              const days = entity.attributes.last_changed || [];
-              const vals = entity.attributes.quarter || [];
+              const days = entity.attributes.day || [];
+              const vals = entity.attributes.consumption || [];
               return days.map((d, i) => [
                 new Date(d + 'T00:00:00').getTime(),
                 Number(vals[i])

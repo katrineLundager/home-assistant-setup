@@ -10,17 +10,36 @@ print(f"{data.Mængde} kWh")
 # Get to a structure of 
  #  ┌─entity_id───────────────────────────┬─state─┬─state_float─┬─attributes──────────────────────────────────────────────────────────────────────┬────────────last_changed─┬────────────last_updated─┬─────────────ingested_at─┐
 #1. │ sensor.clickhouse_daily_consumption │ 0     │           0 │ {"day": [], "consumption": [], "friendly_name": "ClickHouse Daily Consumption"} │ 2026-11-07 11:40:34.091 │ 2026-11-07 11:40:34.091 │ 2026-11-07 11:40:38.883 │
+attr = (f'{{"unit": "kWh", "meter_id": {data.Aftagenummer.unique()[0]} }}')
 
-new_df = pd.DataFrame({})
-new_df['attributes'] = data.Mængde.apply (lambda e: f'{{"quarter":{e}, "friendly_name": "Main consumption"}}') 
-new_df['entity_id'] = 'sensor.clickhouse_main_consumption'
-new_df['state'] = 0
-new_df['state_float'] = 0.0
+new_df = pd.DataFrame( 
+                      columns= ['attributes', 
+                                'entity_id', 
+                                'state',
+                                'state_float',
+                                'ingested_at',
+                                'last_changed',
+                                'last_updated']
+                      )
+new_df = new_df.astype(dtype= {
+                      'attributes':'str',
+                      'entity_id':'str',
+                      'state':'int',
+                      'state_float':'float',
+                      'ingested_at':'str',
+                      'last_changed':'str',
+                      'last_updated':'str',
+                      })
+new_df['state_float'] = data.Mængde 
+print(new_df.dtypes)
+new_df.entity_id = "sensor.clickhouse_main_consumption_nrgi"
+new_df['attributes'] = attr
+new_df['state'] = data.Mængde
 new_df['ingested_at'] = data['Til dato']
 new_df['last_changed'] = data['Til dato']
 new_df['last_updated'] = data['Til dato']
 
+print(new_df.state)
 
-print(new_df)
 new_df.to_csv("exported_data.csv")
 
