@@ -17,6 +17,7 @@
           pandas
           pandas-stubs
           numpy
+          openpyxl
         ]
       );
     in

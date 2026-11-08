@@ -1,18 +1,26 @@
-
+import sys
 import pandas as pd
 
-data = pd.read_csv("Leveret-til-net-29-10-2026_05-11-2026.csv", delimiter=';')
+data = pd.DataFrame([])
+for fn in sys.argv[1:]:
+    print(f"loading file: {fn}")
+    df = pd.read_excel(fn)
+    if not df.empty :
+        data = pd.concat([data,df]) 
+    
+#print(data.Mængde.apply(lambda d: f"{d} kW"))
+print("Done loading")
+print(data)
 
-print(data.Mængde.apply(lambda d: f"{d} kW"))
-print(f"{data.Mængde} kWh")
+if data.empty:
+    print("Dataframe is empty")
+else :
+    # Get to a structure of 
+    #  ┌─entity_id───────────────────────────┬─state─┬─state_float─┬─attributes──────────────────────────────────────────────────────────────────────┬────────────last_changed─┬────────────last_updated─┬─────────────ingested_at─┐
+    #1. │ sensor.clickhouse_daily_consumption │ 0     │           0 │ {"day": [], "consumption": [], "friendly_name": "ClickHouse Daily Consumption"} │ 2026-11-07 11:40:34.091 │ 2026-11-07 11:40:34.091 │ 2026-11-07 11:40:38.883 │
+    attr = (f'{{"unit": "kWh", "meter_id": {data.Aftagenummer.unique()[0]} }}')
 
-
-# Get to a structure of 
- #  ┌─entity_id───────────────────────────┬─state─┬─state_float─┬─attributes──────────────────────────────────────────────────────────────────────┬────────────last_changed─┬────────────last_updated─┬─────────────ingested_at─┐
-#1. │ sensor.clickhouse_daily_consumption │ 0     │           0 │ {"day": [], "consumption": [], "friendly_name": "ClickHouse Daily Consumption"} │ 2026-11-07 11:40:34.091 │ 2026-11-07 11:40:34.091 │ 2026-11-07 11:40:38.883 │
-attr = (f'{{"unit": "kWh", "meter_id": {data.Aftagenummer.unique()[0]} }}')
-
-new_df = pd.DataFrame( 
+    new_df = pd.DataFrame( 
                       columns= ['attributes', 
                                 'entity_id', 
                                 'state',
@@ -21,7 +29,7 @@ new_df = pd.DataFrame(
                                 'last_changed',
                                 'last_updated']
                       )
-new_df = new_df.astype(dtype= {
+    new_df = new_df.astype(dtype= {
                       'attributes':'str',
                       'entity_id':'str',
                       'state':'int',
@@ -30,16 +38,16 @@ new_df = new_df.astype(dtype= {
                       'last_changed':'str',
                       'last_updated':'str',
                       })
-new_df['state_float'] = data.Mængde 
-print(new_df.dtypes)
-new_df.entity_id = "sensor.clickhouse_main_consumption_nrgi"
-new_df['attributes'] = attr
-new_df['state'] = data.Mængde
-new_df['ingested_at'] = data['Til dato']
-new_df['last_changed'] = data['Til dato']
-new_df['last_updated'] = data['Til dato']
+    new_df['state_float'] = data.Mængde 
+    print(new_df.dtypes)
+    new_df['entity_id'] = "sensor.clickhouse_main_consumption_nrgi"
+    new_df['attributes'] = attr
+    new_df['state'] = data.Mængde
+    new_df['ingested_at'] = data['Til dato']
+    new_df['last_changed'] = data['Til dato']
+    new_df['last_updated'] = data['Til dato']
 
-print(new_df.state)
+    print(new_df.state)
 
-new_df.to_csv("exported_data.csv")
+    new_df.to_csv("exported_data.csv")
 

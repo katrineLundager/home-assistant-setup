@@ -94,7 +94,7 @@
               "day"
               "consumption"
             ];
-            scan_interval = 600;
+            scan_interval = 5;
           };
         }
         {
@@ -110,7 +110,7 @@
               "hour"
               "elevation"
             ];
-            scan_interval = 600;
+            scan_interval = 5;
           };
         }
         {
@@ -126,7 +126,7 @@
               "hour"
               "temperature"
             ];
-            scan_interval = 600;
+            scan_interval = 5;
           };
         }
         {
@@ -142,7 +142,7 @@
               "hour"
               "price"
             ];
-            scan_interval = 600;
+            scan_interval = 5;
           };
         }
       ];
