@@ -75,7 +75,7 @@
             command = ''
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day ORDER BY day"
             '';
-            value_template = "{{ value_json.quarter | default([]) | last | default(0) }}";
+            value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             json_attributes = [
               "day"
               "consumption"
