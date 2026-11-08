@@ -88,7 +88,7 @@
             # -> sensor.clickhouse_hourly_consumption_from_nrgi
             name = "ClickHouse Hourly Consumption From NRGI";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             json_attributes = [
@@ -118,7 +118,7 @@
             # attribute (the ingestor stores full attributes as JSON).
             name = "ClickHouse Sun Elevation";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'elevation')) AS elevation FROM homeassistant.states WHERE entity_id = 'sun.sun' AND JSONHas(attributes, 'elevation') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'elevation')) AS elevation FROM homeassistant.states WHERE entity_id = 'sun.sun' AND JSONHas(attributes, 'elevation') AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.elevation | default([]) | last | default(0) }}";
             json_attributes = [
@@ -156,6 +156,40 @@
             json_attributes = [
               "hour"
               "price"
+            ];
+            scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
+            # -> sensor.clickhouse_lux_0xfd01
+            # Hourly avg lux from the remote weather-station ClickHouse
+            # (default.sensor_0xfd01). TZ=... is required because the NixOS
+            # clickhouse-client has no /usr/share/zoneinfo and fails on
+            # DateTime values without it.
+            name = "ClickHouse Lux 0xfd01";
+            command = ''
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(lux) AS lux FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
+            '';
+            value_template = "{{ value_json.lux | default([]) | last | default(0) }}";
+            json_attributes = [
+              "hour"
+              "lux"
+            ];
+            scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
+            # -> sensor.clickhouse_temperature_0xfd01
+            name = "ClickHouse Temperature 0xfd01";
+            command = ''
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(temperature) AS temperature FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
+            '';
+            value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
+            json_attributes = [
+              "hour"
+              "temperature"
             ];
             scan_interval = 5;
           };
