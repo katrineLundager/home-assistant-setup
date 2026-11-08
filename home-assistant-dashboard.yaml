@@ -148,7 +148,7 @@ views:
       - type: custom:apexcharts-card
         header:
           show: true
-          title: Daily consumption (ClickHouse)
+          title: Daily consumption export (ClickHouse)
         graph_span: 14d
         span:
           end: day
@@ -156,12 +156,12 @@ views:
           show: true
           label: Now
         series:
-          - entity: sensor.clickhouse_daily_consumption
+          - entity: sensor.clickhouse_main_consumption
             name: Consumption
             type: column
             data_generator: |
-              const days = entity.attributes.day || [];
-              const vals = entity.attributes.consumption || [];
+              const days = entity.attributes.last_changed || [];
+              const vals = entity.attributes.quarter || [];
               return days.map((d, i) => [
                 new Date(d + 'T00:00:00').getTime(),
                 Number(vals[i])

@@ -232,7 +232,9 @@ attributes (hourly averages over the last 7 days, hours in Europe/Copenhagen):
 
 The **ClickHouse** tab of the "A Hus!" dashboard (`home-assistant-dashboard.yaml`)
 renders them with `apexcharts-card` charts: daily consumption, sun elevation,
-temperature and spot price.
+temperature and spot price. Charts show the trailing range (last 7 days;
+14 days for consumption) ending at the end of the current day, with a `Now`
+marker — `span: { end: day }` in apexcharts-card.
 
 Notes:
 
