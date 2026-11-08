@@ -77,8 +77,8 @@
             '';
             value_template = "{{ value_json.consumption | default([]) | sum }}";
             json_attributes = [
-              "day"
-              "consumption"
+              "last_changed"
+              "quarter"
             ];
             scan_interval = 600;
           };

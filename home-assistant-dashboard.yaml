@@ -156,7 +156,7 @@ views:
           show: true
           label: Now
         series:
-          - entity: sensor.clickhouse_main_consumption
+          - entity: sensor.clickhouse_daily_consumption_from_nrgi
             name: Consumption
             type: column
             data_generator: |
