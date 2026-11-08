@@ -150,11 +150,10 @@ views:
         now:
           show: true
           label: Now
-        apexcharts:
-          yaxis:
-            - id: primary
-            - id: secondary
-              opposite: true
+        yaxis:
+          - id: primary
+          - id: secondary
+            opposite: true
         series:
           - entity: sensor.clickhouse_lux_0xfd01
             name: Lux
