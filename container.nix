@@ -71,6 +71,20 @@
       command_line = [
         {
           sensor = {
+            name = "ClickHouse Daily Consumption - from NRGI";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day ORDER BY day"
+            '';
+            value_template = "{{ value_json.consumption | default([]) | sum }}";
+            json_attributes = [
+              "day"
+              "consumption"
+            ];
+            scan_interval = 600;
+          };
+        }
+        {
+          sensor = {
             name = "ClickHouse Daily Consumption";
             command = ''
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.main_energy' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day ORDER BY day"
