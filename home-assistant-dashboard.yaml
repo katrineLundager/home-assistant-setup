@@ -74,12 +74,12 @@ views:
             extend_to: false
             name: Tomorrows prices
             data_generator: |
-                const days = entity.attributes.hour || [];
+                const hours = entity.attributes.hour || [];
                 const vals = entity.attributes.consumption || [];
-                const forecast = days.map((d, i) => [
-                  new Date(d + 'T00:00:00').getTime(),
+                const forecast = hours.map((h, i) => [
+                  new Date(h).getTime(),
                   Number(vals[i])
-                ])  
+                ])
                 return [...forecast]
 
 
