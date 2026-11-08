@@ -1,7 +1,7 @@
 
 import pandas as pd
 
-data = pd.read_csv("consumption.csv", delimiter=';')
+data = pd.read_csv("Leveret-til-net-29-10-2026_05-11-2026.csv", delimiter=';')
 
 print(data.Mængde.apply(lambda d: f"{d} kW"))
 print(f"{data.Mængde} kWh")
