@@ -95,7 +95,7 @@
               "hour"
               "consumption"
             ];
-            scan_interval = 600;
+            scan_interval = 5;
           };
         }
         {
