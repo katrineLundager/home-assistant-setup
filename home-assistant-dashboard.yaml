@@ -2,8 +2,11 @@ title: My Home
 views:
   - title: Energy
     path: energy
+    type: sections
     cards:
       - type: custom:apexcharts-card
+        grid_options:
+          columns: full
         header:
           show: true
           title: Electricity prices
@@ -55,15 +58,17 @@ views:
 
 
       - type: custom:apexcharts-card
+        grid_options:
+          columns: full
         header:
           show: true
           title: Electricity consumption 
           show_states: true
           colorize_states: true
-        graph_span: 96h
+        graph_span: 48h
         span:
           start: hour
-          offset: "-7d"
+          offset: "-5d"
         now:
           show: true
           label: Now
@@ -72,7 +77,7 @@ views:
 
           - entity: sensor.clickhouse_hourly_consumption_from_nrgi
             extend_to: false
-            name: Tomorrows prices
+            name: Hourly consumption data
             data_generator: |
                 const hours = entity.attributes.hour || [];
                 const vals = entity.attributes.consumption || [];
@@ -83,57 +88,6 @@ views:
                 return [...forecast]
 
 
-  - title: Energy 2
-    path: energy2
-    cards:
-      - type: custom:apexcharts-card
-        header:
-          show: true
-          title: ApexCharts-Card
-          show_states: true
-          colorize_states: true
-        graph_span: 48h
-        span:
-          start: hour
-          offset: "-12h"
-        now:
-          show: true
-          label: Now
-        hours_12: false
-        series:
-          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
-            extend_to: false
-            name: Current prices
-            data_generator: |
-              const rawToday = entity.attributes.raw_today || [];
-              const rawTomorrow = entity.attributes.raw_tomorrow || [];
-              const now = new Date();
-              const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
-              const midnight = new Date(now.getTime());
-              midnight.setHours(23,59,0);
-  
-              const historical = rawToday
-              .filter(item => {
-                const start = new Date(item.start);
-                return start >= twelveHoursAgo && start <= midnight
-              })
-              .map(item => [new Date(item.start).getTime(), item.value]);
-
-
-              return [...historical];
-
-
-          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
-            extend_to: false
-            name: Tomorrows prices
-            data_generator: |
-              const rawTomorrow = entity.attributes.raw_tomorrow || [];
-
-              const forecast = rawTomorrow
-                .slice(0, 200)
-                .map(item => [new Date(item.start).getTime(), item.value]);
-  
-              return [...forecast]
 
 
   - title: Electricity
