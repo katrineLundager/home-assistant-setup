@@ -2,8 +2,12 @@ title: My Home
 views:
   - title: Energy
     path: energy
+    type: sections
     cards:
       - type: custom:apexcharts-card
+        grid_options:
+          columns: full
+          rows: 8
         header:
           show: true
           title: Electricity prices
@@ -55,6 +59,9 @@ views:
 
 
       - type: custom:apexcharts-card
+        grid_options:
+          columns: full
+          rows: 8
         header:
           show: true
           title: Electricity consumption 
@@ -122,8 +129,12 @@ views:
   # The data_generators read them synchronously — no browser fetch / CORS.
   - title: ClickHouse
     path: clickhouse
+    type: sections
     cards:
       - type: custom:apexcharts-card
+        grid_options:
+          columns: full
+          rows: 8
         header:
           show: true
           title: Consumption (NRGI, hourly)
@@ -143,6 +154,9 @@ views:
                 Number(vals[i])
               ]);
       - type: custom:apexcharts-card
+        grid_options:
+          columns: full
+          rows: 8
         header:
           show: true
           title: Sunlight (lux) and sun elevation
@@ -176,6 +190,9 @@ views:
                 Number(vals[i])
               ]);
       - type: custom:apexcharts-card
+        grid_options:
+          columns: full
+          rows: 8
         header:
           show: true
           title: Temperature (0xfd01)
