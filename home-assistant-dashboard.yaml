@@ -6,7 +6,7 @@ views:
       - type: custom:apexcharts-card
         header:
           show: true
-          title: ApexCharts-Card
+          title: Electricity prices
           show_states: true
           colorize_states: true
         graph_span: 48h
@@ -52,6 +52,35 @@ views:
   
               return [...forecast]
 
+
+
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Electricity consumption 
+          show_states: true
+          colorize_states: true
+        graph_span: 96h
+        span:
+          start: hour
+          offset: "-7d"
+        now:
+          show: true
+          label: Now
+        hours_12: false
+        series:
+
+          - entity: sensor.clickhouse_hourly_consumption_from_nrgi
+            extend_to: false
+            name: Tomorrows prices
+            data_generator: |
+                const days = entity.attributes.hour || [];
+                const vals = entity.attributes.consumption || [];
+                const forecast = days.map((d, i) => [
+                  new Date(d + 'T00:00:00').getTime(),
+                  Number(vals[i])
+                ])  
+                return [...forecast]
 
 
   - title: Energy 2
