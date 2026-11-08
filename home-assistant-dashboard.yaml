@@ -10,6 +10,7 @@ views:
             grid_options:
               columns: full
               rows: 8
+            chart_height: 300px
             header:
               show: true
               title: Electricity prices
@@ -64,6 +65,7 @@ views:
             grid_options:
               columns: full
               rows: 8
+            chart_height: 300px
             header:
               show: true
               title: Electricity consumption 
@@ -139,6 +141,7 @@ views:
             grid_options:
               columns: full
               rows: 8
+            chart_height: 300px
             header:
               show: true
               title: Consumption (NRGI, hourly)
@@ -161,6 +164,7 @@ views:
             grid_options:
               columns: full
               rows: 8
+            chart_height: 300px
             header:
               show: true
               title: Sunlight (lux) and sun elevation
@@ -197,6 +201,7 @@ views:
             grid_options:
               columns: full
               rows: 8
+            chart_height: 300px
             header:
               show: true
               title: Temperature (0xfd01)
