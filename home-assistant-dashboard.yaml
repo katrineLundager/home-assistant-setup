@@ -12,7 +12,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 7
+              rows: 8
             apex_config:
               chart:
                 height: 350px
@@ -69,7 +69,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 7
+              rows: 8
             apex_config:
               chart:
                 height: 350px
@@ -103,35 +103,51 @@ views:
 
 
 
-  - title: Electricity
-    cards:
-      # Raw spot price for the day
-      - type: custom:mini-graph-card
-        name: Spot price (DK1)
-        entities:
-          - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
-            name: Now
-        hours_to_show: 24
-        points_per_hour: 12
-        unit: DKK/kWh
-        show:
-          fill: fade
+  - title: Consumption
+    path: consumption
+    max_colums: 4
+    type: sections
+    sections:
+      - type: grid
+        column_span: 4
+        cards:
 
-          # Consumption vs price over time
-      - type: statistics-graph
-        title: Consumption (sum per day)
-        entities:
-          - sensor.main_energy
-        stat_type: sum
-        period: day
-        days_to_show: 14
-
-        # History of the price sensor itself
-      - type: history-graph
-        title: Price history
-        hours_to_show: 48
-        entities:
-          - sensor.nordpool_kwh_dk1_dkk_3_10_0
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 7
+            apex_config:
+              chart:
+                height: 350px
+            header:
+              show: true
+              title: Consumption (NRGI, hourly)
+            graph_span: 1yr
+            now:
+              show: true
+              label: Now
+            series:
+              - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+                name: Consumption (kWh)
+                type: column
+                data_generator: |
+                  const month = entity.attributes.month || [];
+                  const vals = entity.attributes.consumption || [];
+                  return month.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ]);
+              - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+                name: Consumption (kWh)
+                type: column
+                data_generator: |
+                  const month = entity.attributes.month || [];
+                  const vals = entity.attributes.consumption || [];
+                  return month.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ]);
+ 
 
   # ── ClickHouse-backed charts ────────────────────────────────────
   # Data comes from command_line sensors (see container.nix) that query
