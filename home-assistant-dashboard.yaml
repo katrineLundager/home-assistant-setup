@@ -7,9 +7,9 @@ views:
     max_columns: 4
     sections:
       - type: grid
+        column_span: 4
         cards:
           - type: custom:apexcharts-card
-            column_span: 4
             grid_options:
               columns: full
               rows: 7
@@ -67,7 +67,6 @@ views:
 
 
           - type: custom:apexcharts-card
-            column_span: 4
             grid_options:
               columns: full
               rows: 7
