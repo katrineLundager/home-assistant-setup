@@ -113,8 +113,6 @@ views:
     - type: grid
       column_span: 2
       cards:
-        - type: heading
-          heading: New section
         - type: custom:apexcharts-card
           grid_options:
             columns: full
@@ -222,8 +220,6 @@ views:
     - type: grid
       column_span: 2
       cards:
-      - type: heading
-        heading: New section
       - type: custom:apexcharts-card
         grid_options:
           columns: full
