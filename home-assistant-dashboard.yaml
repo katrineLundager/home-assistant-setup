@@ -3,6 +3,7 @@ views:
   - title: Energy
     path: energy
     type: sections
+    dense_section_placement: true
     sections:
       - type: grid
         cards:
@@ -138,16 +139,18 @@ views:
   - title: ClickHouse
     path: clickhouse
     type: sections
+    max_columns: 4
     sections:
       - type: grid
+        column_span: 4
         cards:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 7
             apex_config:
               chart:
-                height: 250px
+                height: 350px
             header:
               show: true
               title: Consumption (NRGI, hourly)
@@ -169,11 +172,14 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 7
             header:
               show: true
               title: Sunlight (lux) and sun elevation
             graph_span: 14d
+            apex_config:
+              chart:
+                height: 350px
             now:
               show: true
               label: Now
@@ -205,10 +211,10 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 7
             apex_config:
               chart:
-                height: 250px
+                height: 350px
             header:
               show: true
               title: Temperature (0xfd01)
