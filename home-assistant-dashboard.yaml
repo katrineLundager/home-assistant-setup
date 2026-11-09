@@ -121,7 +121,7 @@ views:
             rows: 7
           apex_config:
             chart:
-              height: 350px
+              height: 550px
             legend:
               show: true
               position: bottom
