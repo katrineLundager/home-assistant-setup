@@ -108,47 +108,177 @@ views:
     max_colums: 4
     type: sections
     sections:
-      - type: grid
-        column_span: 4
-        cards:
 
-          - type: custom:apexcharts-card
-            grid_options:
-              columns: full
-              rows: 7
-            apex_config:
-              chart:
-                height: 350px
-            header:
+
+    - type: grid
+      column_span: 2
+      cards:
+        - type: heading
+          heading: New section
+        - type: custom:apexcharts-card
+          grid_options:
+            columns: full
+            rows: 7
+          apex_config:
+            chart:
+              height: 350px
+            legend:
               show: true
-              title: Consumption (NRGI, hourly)
-            graph_span: 1yr
-            now:
-              show: true
-              label: Now
-            series:
-              - entity: sensor.clickhouse_monthly_consumption_from_nrgi
-                name: Consumption (kWh)
-                type: column
-                data_generator: |
-                  const month = entity.attributes.month || [];
-                  const vals = entity.attributes.consumption || [];
-                  return month.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ]);
-              - entity: sensor.clickhouse_monthly_consumption_from_nrgi
-                name: Last year (kWh)
-                type: column
-                data_generator: |
-                  const month = entity.attributes.month || [];
-                  const vals = entity.attributes.consumption || [];
-                  return month.map((h, i) => {
-                    const d = new Date(h);
-                    d.setFullYear(d.getFullYear() + 1);
-                    return [d.getTime(), Number(vals[i])];
-                  });
- 
+              position: bottom
+          header:
+            show: true
+            title: Accumulated consumption by year (NRGI)
+          graph_span: 1yr
+          span:
+            start: year
+          series:
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: This year
+              type: line
+              curve: straight
+              extend_to: false
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 0;
+                const pts = months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .sort((a, b) => a[1] - b[1])
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+                let acc = 0;
+                return pts.map(p => [p[0], acc += p[1]]);
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: Last year
+              type: line
+              curve: straight
+              extend_to: false
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 1;
+                const pts = months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .sort((a, b) => a[1] - b[1])
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+                let acc = 0;
+                return pts.map(p => [p[0], acc += p[1]]);
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: 2 years ago
+              type: line
+              curve: straight
+              extend_to: false
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 2;
+                const pts = months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .sort((a, b) => a[1] - b[1])
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+                let acc = 0;
+                return pts.map(p => [p[0], acc += p[1]]);
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: 3 years ago
+              type: line
+              curve: straight
+              extend_to: false
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 3;
+                const pts = months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .sort((a, b) => a[1] - b[1])
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+                let acc = 0;
+                return pts.map(p => [p[0], acc += p[1]]);
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: 4 years ago
+              type: line
+              curve: straight
+              extend_to: false
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 4;
+                const pts = months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .sort((a, b) => a[1] - b[1])
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+                let acc = 0;
+                return pts.map(p => [p[0], acc += p[1]]);
+
+
+    - type: grid
+      column_span: 2
+      cards:
+      - type: heading
+        heading: New section
+      - type: custom:apexcharts-card
+        grid_options:
+          columns: 2
+          rows: 7
+        apex_config:
+          chart:
+            height: 550px
+          legend:
+            show: true
+            position: bottom
+        header:
+          show: true
+          title: Monthly consumption by year (NRGI)
+        graph_span: 1yr
+        span:
+          start: year
+        series:
+          - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+            name: 2 years ago
+            type: column
+            data_generator: |
+              const months = entity.attributes.month || [];
+              const vals = entity.attributes.consumption || [];
+              const cur = new Date().getFullYear();
+              const src = cur - 2;
+              return months
+                .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                .filter(p => p[0] === src)
+                .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+          - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+            name: Last year
+            type: column
+            data_generator: |
+              const months = entity.attributes.month || [];
+              const vals = entity.attributes.consumption || [];
+              const cur = new Date().getFullYear();
+              const src = cur - 1;
+              return months
+                .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                .filter(p => p[0] === src)
+                .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+          - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+            name: This year
+            type: column
+            data_generator: |
+              const months = entity.attributes.month || [];
+              const vals = entity.attributes.consumption || [];
+              const cur = new Date().getFullYear();
+              const src = cur - 0;
+              return months
+                .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                .filter(p => p[0] === src)
+                .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+
+
 
   # ── ClickHouse-backed charts ────────────────────────────────────
   # Data comes from command_line sensors (see container.nix) that query
