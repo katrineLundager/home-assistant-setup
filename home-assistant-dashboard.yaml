@@ -226,7 +226,7 @@ views:
         heading: New section
       - type: custom:apexcharts-card
         grid_options:
-          columns: 2
+          columns: full
           rows: 7
         apex_config:
           chart:
