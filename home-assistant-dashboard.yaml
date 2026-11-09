@@ -138,15 +138,16 @@ views:
                     Number(vals[i])
                   ]);
               - entity: sensor.clickhouse_monthly_consumption_from_nrgi
-                name: Consumption (kWh)
+                name: Last year (kWh)
                 type: column
                 data_generator: |
                   const month = entity.attributes.month || [];
                   const vals = entity.attributes.consumption || [];
-                  return month.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ]);
+                  return month.map((h, i) => {
+                    const d = new Date(h);
+                    d.setFullYear(d.getFullYear() + 1);
+                    return [d.getTime(), Number(vals[i])];
+                  });
  
 
   # ── ClickHouse-backed charts ────────────────────────────────────
