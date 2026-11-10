@@ -161,16 +161,23 @@
         }
         {
           sensor = {
-            # Hourly average nordpool spot price. The sensor's state is the
-            # current price and changes hourly, so state_float is the series.
+            # Nordpool spot price from the latest throttled ClickHouse row.
+            # The ingestor only stores nordpool a few times a day (see
+            # THROTTLE_ENTITIES), so we read the full today/tomorrow price
+            # arrays from that row's attributes JSON instead of aggregating
+            # state_float over many 15-min rows.
+            # raw_today/raw_tomorrow arrive as JSON-encoded strings; the
+            # dashboard data_generator does JSON.parse() on them.
             name = "ClickHouse Nordpool Price";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT state_float AS price, JSONExtract(attributes, 'raw_today') AS raw_today, JSONExtract(attributes, 'raw_tomorrow') AS raw_tomorrow, JSONExtract(attributes, 'today') AS today, JSONExtract(attributes, 'tomorrow') AS tomorrow FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL ORDER BY last_updated DESC LIMIT 1"
             '';
-            value_template = "{{ value_json.price | default([]) | last | default(0) }}";
+            value_template = "{{ value_json.price | default(0) }}";
             json_attributes = [
-              "hour"
-              "price"
+              "raw_today"
+              "raw_tomorrow"
+              "today"
+              "tomorrow"
             ];
             scan_interval = 5;
           };
@@ -316,6 +323,11 @@
       FLUSH_INTERVAL = "5";
       INCLUDE_ATTRIBUTES = "true";
       # EXCLUDE_ENTITIES = "sensor.bad_entity,switch.noisy";
+      # Nordpool fires state_changed every 15 min but its attributes only
+      # change at midnight and ~13:00 CET. Throttle to one row per 6 h so
+      # ClickHouse gets 2-4 full-attribute rows/day instead of 96.
+      # Format: entity_id=min_seconds;...
+      THROTTLE_ENTITIES = "sensor.nordpool_kwh_dk1_dkk_3_10_0=21600";
     };
   };
 }

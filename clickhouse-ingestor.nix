@@ -1,26 +1,21 @@
-{ stdenv, python3, fetchFromGitHub }:
+{ stdenv, python3 }:
 
 let
   python = python3.withPackages (ps: [ ps.websockets ]);
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "clickhouse-ingestor";
   version = "1.0.0";
 
-  # Pinned to commit 3642fa3 (main branch as of 2025-10-03)
-  src = fetchFromGitHub {
-    owner = "apbodrov";
-    repo = "clickhouse-hassio";
-    rev = "3642fa32caa1701db84f3814f93936a67db14346";
-    sha256 = "sha256-PhdH3tL9whPpw5aZGOqcyRAQ+cSeLnAK5aDk/Ekmays=";
-  };
-
+  # Local patched copy of upstream apbodrov/clickhouse-hassio @ 3642fa3
+  # (ingestor/ingestor.py). Adds EXCLUDE_ATTRIBUTES_BY_ENTITY support.
+  dontUnpack = true;
   dontBuild = true;
 
   installPhase = ''
     runHook preInstall
     mkdir -p $out/bin $out/lib
-    cp ingestor/ingestor.py $out/lib/ingestor.py
+    cp ${./ingestor.py} $out/lib/ingestor.py
     cat > $out/bin/clickhouse-ingestor <<EOF
     #!${python}/bin/python3
     import sys

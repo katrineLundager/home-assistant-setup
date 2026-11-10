@@ -228,7 +228,7 @@ attributes (hourly averages over the last 7 days, hours in Europe/Copenhagen):
 |---|---|
 | `sensor.clickhouse_sun_elevation` | `avg(elevation)` from `sun.sun` attributes |
 | `sensor.clickhouse_temperature` | `avg(temperature)` from `weather.forecast_home` attributes |
-| `sensor.clickhouse_nordpool_price` | `avg(state_float)` of `sensor.nordpool_kwh_dk1_dkk_3_10_0` |
+| `sensor.clickhouse_nordpool_price` | latest row's `raw_today`/`raw_tomorrow` from `attributes` JSON (nordpool is throttled to a few rows/day via `THROTTLE_ENTITIES`) |
 
 The **ClickHouse** tab of the "A Hus!" dashboard (`home-assistant-dashboard.yaml`)
 renders them with `apexcharts-card` charts: daily consumption, sun elevation,
@@ -240,8 +240,12 @@ Notes:
 
 - `sun.sun` has no temperature attribute — temperature comes from the weather
   entity (`weather.forecast_home`).
-- The nordpool sensor's state is the current spot price and changes hourly, so
-  its `state_float` history is the price series.
+- The nordpool sensor fires `state_changed` every 15 min but its attributes only
+  change at midnight and ~13:00 CET. The ingestor throttles it
+  (`THROTTLE_ENTITIES`, 6 h) so ClickHouse stores 2-4 full-attribute rows/day
+  instead of 96 — the dashboard price chart reads `raw_today`/`raw_tomorrow`
+  directly from the live HA entity, and `clickhouse_nordpool_price` reads them
+  from the latest stored row.
 - Hours are formatted server-side in Europe/Copenhagen, so chart times match
   local time (the raw `last_updated` column is stored in UTC).
 
