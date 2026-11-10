@@ -29,6 +29,7 @@
       "forecast_solar"
       "fronius"
       "sma"
+      "shelly"
     ];
 
     customLovelaceModules = with pkgs.home-assistant-custom-lovelace-modules; [
