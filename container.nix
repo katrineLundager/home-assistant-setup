@@ -185,6 +185,25 @@
         }
         {
           sensor = {
+            # Hourly energy delta for the Shelly motorcycle charger.
+            # motorcykel_output_energy is a monotonic total counter, so the
+            # per-hour consumption is last_value - first_value within the hour
+            # (argMax/argMin by last_updated). Rows with state_float NULL
+            # (entity "unavailable" while the Shelly sleeps) are excluded.
+            name = "ClickHouse Motorcycle Energy";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfMinute(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS minute, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR GROUP BY minute ORDER BY minute"
+            '';
+            value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            json_attributes = [
+              "minute"
+              "consumption"
+            ];
+            scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
             # -> sensor.clickhouse_lux_0xfd01
             # Hourly avg lux from the remote weather-station ClickHouse
             # (default.sensor_0xfd01). TZ=... is required because the NixOS

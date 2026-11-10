@@ -66,6 +66,7 @@ views:
 
 
 
+
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -98,8 +99,42 @@ views:
                       new Date(h).getTime(),
                       Number(vals[i])
                     ])
-                    return [...forecast]
 
+      - type: grid
+        column_span: 2
+        cards:
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 250px
+            header:
+              show: true
+              title: Motorcycle
+              show_states: true
+              colorize_states: true
+            graph_span: 48h
+            span:
+              start: hour
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.clickhouse_motorcycle_energy
+                extend_to: false
+                name: Motorcycle consumption
+                type: column
+                data_generator: |
+                  const minutes = entity.attributes.minute|| [];
+                  const vals = entity.attributes.consumption || [];
+                  return minutes.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
 
 
 
