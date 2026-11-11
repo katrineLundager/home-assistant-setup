@@ -475,6 +475,7 @@ views:
               show: true
               label: Now
             yaxis:
+            - id: Temperature
               max: 40
             series:
               - entity: sensor.clickhouse_temperature_0xfd01
