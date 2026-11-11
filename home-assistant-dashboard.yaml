@@ -88,7 +88,6 @@ views:
               label: Now
             hours_12: false
             series:
-
               - entity: sensor.clickhouse_hourly_consumption_from_nrgi
                 extend_to: false
                 name: Hourly consumption data
@@ -99,6 +98,7 @@ views:
                       new Date(h).getTime(),
                       Number(vals[i])
                     ])
+                    return [...forecast]
 
       - type: grid
         column_span: 2
@@ -113,7 +113,41 @@ views:
                 height: 250px
             header:
               show: true
-              title: Motorcycle
+              title: Motorcycle accumulated consumption
+              show_states: true
+              colorize_states: true
+            graph_span: 14d
+            span:
+              start: day
+              offset: -14d
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.clickhouse_motorcycle_energy
+                extend_to: false
+                name: Motorcycle energy
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.energy || [];
+                  return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
+
+
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 250px
+            header:
+              show: true
+              title: Motorcycle consumption
               show_states: true
               colorize_states: true
             graph_span: 48h
@@ -124,12 +158,11 @@ views:
               label: Now
             hours_12: false
             series:
-              - entity: sensor.clickhouse_motorcycle_energy
+              - entity: sensor.clickhouse_motorcycle_consumption
                 extend_to: false
                 name: Motorcycle consumption
-                type: column
                 data_generator: |
-                  const minutes = entity.attributes.minute|| [];
+                  const minutes = entity.attributes.minute || [];
                   const vals = entity.attributes.consumption || [];
                   return minutes.map((h, i) => [
                     new Date(h).getTime(),
