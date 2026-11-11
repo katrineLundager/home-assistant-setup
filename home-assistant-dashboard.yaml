@@ -101,12 +101,12 @@ views:
                     return [...forecast]
 
       - type: grid
-        column_span: 4
+        column_span: 2
         cards:
 
           - type: custom:apexcharts-card
             grid_options:
-              columns: 2
+              columns: full
               rows: 8
             apex_config:
               chart:
@@ -136,9 +136,13 @@ views:
                     Number(vals[i])
                   ])
 
+
+      - type: grid
+        column_span: 2
+        cards:
           - type: custom:apexcharts-card
             grid_options:
-              columns: 2
+              columns: full
               rows: 8
             apex_config:
               chart:
@@ -182,7 +186,7 @@ views:
         - type: custom:apexcharts-card
           grid_options:
             columns: full
-            rows: 7
+            rows: 10
           apex_config:
             chart:
               height: 550px
@@ -289,7 +293,7 @@ views:
       - type: custom:apexcharts-card
         grid_options:
           columns: full
-          rows: 7
+          rows: 8
         apex_config:
           chart:
             height: 550px
@@ -470,6 +474,8 @@ views:
             now:
               show: true
               label: Now
+            yaxis:
+              max: 40
             series:
               - entity: sensor.clickhouse_temperature_0xfd01
                 name: Temperature (°C)
