@@ -101,12 +101,12 @@ views:
                     return [...forecast]
 
       - type: grid
-        column_span: 2
+        column_span: 4
         cards:
 
           - type: custom:apexcharts-card
             grid_options:
-              columns: full
+              columns: 2
               rows: 8
             apex_config:
               chart:
@@ -136,11 +136,9 @@ views:
                     Number(vals[i])
                   ])
 
-
-
           - type: custom:apexcharts-card
             grid_options:
-              columns: full
+              columns: 2
               rows: 8
             apex_config:
               chart:
@@ -342,6 +340,10 @@ views:
                 .filter(p => p[0] === src)
                 .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
 
+
+    - type: grid
+      column_span: 2
+      cards:
 
           - type: custom:apexcharts-card
             grid_options:
