@@ -30,6 +30,7 @@
       "fronius"
       "sma"
       "shelly"
+      "peblar"
     ];
 
     customLovelaceModules = with pkgs.home-assistant-custom-lovelace-modules; [
