@@ -7,7 +7,7 @@ views:
     max_columns: 4
     sections:
       - type: grid
-        column_span: 4
+        column_span: 2
         cards:
           - type: custom:apexcharts-card
             grid_options:
@@ -55,7 +55,10 @@ views:
 
 
 
-
+      - type: grid
+        column_span: 2
+        cards:
+ 
 
           - type: custom:apexcharts-card
             grid_options:
@@ -69,10 +72,10 @@ views:
               title: Historic electricity prices
               show_states: true
               colorize_states: true
-            graph_span: 1w
+            graph_span: 1mth
             span:
               start: hour
-              offset: "-1w"
+              offset: "-1mth"
             now:
               show: true
               label: Now
@@ -164,6 +167,13 @@ views:
                   ])
 
 
+
+  - title: Currently consuming
+    path: currently_consumption
+    max_colums: 4
+    type: sections
+    sections:
+
       - type: grid
         column_span: 2
         cards:
@@ -200,7 +210,13 @@ views:
 
 
 
-  - title: Consumption
+
+
+
+
+
+
+  - title: Historic Consumption
     path: consumption
     max_colums: 4
     type: sections
@@ -370,6 +386,43 @@ views:
                 .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
                 .filter(p => p[0] === src)
                 .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+
+
+    - type: grid
+      column_span: 2
+      cards:
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 250px
+            header:
+              show: true
+              title: Car Energy
+              show_states: true
+              colorize_states: true
+            graph_span: 14d
+            span:
+              start: day
+              offset: -14d
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.clickhouse_car_energy
+                extend_to: false
+                name: Motorcycle energy
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.energy || [];
+                  return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
 
 
     - type: grid
