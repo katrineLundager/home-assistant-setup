@@ -23,8 +23,7 @@ views:
               colorize_states: true
             graph_span: 48h
             span:
-              start: hour
-              offset: "-12h"
+              start: day 
             now:
               show: true
               label: Now
@@ -36,18 +35,8 @@ views:
                 data_generator: |
                   const rawToday = entity.attributes.raw_today || [];
                   const rawTomorrow = entity.attributes.raw_tomorrow || [];
-                  const now = new Date();
-                  const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
-                  const midnight = new Date(now.getTime());
-                  midnight.setHours(23,59,0);
-
                   const historical = rawToday
-                  .filter(item => {
-                    const start = new Date(item.start);
-                    return start >= twelveHoursAgo && start <= midnight
-                  })
                   .map(item => [new Date(item.start).getTime(), item.value]);
-
 
                   return [...historical];
 
@@ -63,6 +52,44 @@ views:
                     .map(item => [new Date(item.start).getTime(), item.value]);
 
                   return [...forecast]
+
+
+
+
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 250px
+            header:
+              show: true
+              title: Historic electricity prices
+              show_states: true
+              colorize_states: true
+            graph_span: 1w
+            span:
+              start: hour
+              offset: "-1w"
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.clickhouse_nordpool_history
+                extend_to: false
+                name: Historic prices
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.price || [];
+                  const historical = hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ]);
+                  return [...historical];
+
 
 
 

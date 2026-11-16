@@ -164,10 +164,10 @@
         {
           sensor = {
             # Nordpool spot price from the latest throttled ClickHouse row.
-            # The ingestor only stores nordpool a few times a day (see
-            # THROTTLE_ENTITIES), so we read the full today/tomorrow price
-            # arrays from that row's attributes JSON instead of aggregating
-            # state_float over many 15-min rows.
+            # The ingestor throttles nordpool to one row per hour (see
+            # THROTTLE_ENTITIES); every stored row still carries the full
+            # today/tomorrow price arrays, so we read them from that row's
+            # attributes JSON.
             # raw_today/raw_tomorrow arrive as JSON-encoded strings; the
             # dashboard data_generator does JSON.parse() on them.
             name = "ClickHouse Nordpool Price";
@@ -182,6 +182,30 @@
               "tomorrow"
             ];
             scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
+            # Hourly nordpool spot prices for history graphs (1w and longer).
+            # Two sources are UNIONed: the hourly state_float rows stored
+            # since the throttle was lowered to 1 h, and the raw_today arrays
+            # still present on the older 6 h-throttled rows, so the period
+            # before the throttle change is backfilled too. Duplicate hours
+            # collapse in the outer avg().
+            # 31 days hourly (~744 points) covers a 1w card today and a 1mo
+            # card later; for 3m/5y add a sensor with a coarser GROUP BY
+            # (day/week/month) to keep the attribute payload small.
+            name = "ClickHouse Nordpool History";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(toDateTime(ts)), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(price) AS price FROM (SELECT toUnixTimestamp(last_updated) AS ts, state_float AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY UNION ALL SELECT toUnixTimestamp(parseDateTimeBestEffort(JSONExtractString(item, 'start'))) AS ts, toFloat64(JSONExtractString(item, 'value')) AS price FROM homeassistant.states, arrayJoin(JSONExtractArrayRaw(attributes, 'raw_today')) AS item WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND last_updated >= now() - INTERVAL 31 DAY) GROUP BY toStartOfHour(toDateTime(ts)) ORDER BY toStartOfHour(toDateTime(ts))"
+            '';
+            value_template = "{{ value_json.price | default([]) | last | default(0) }}";
+            json_attributes = [
+              "hour"
+              "price"
+            ];
+            # Prices only change hourly, so polling faster is wasted work.
+            scan_interval = 300;
           };
         }
         {
@@ -363,11 +387,13 @@
       FLUSH_INTERVAL = "5";
       INCLUDE_ATTRIBUTES = "true";
       # EXCLUDE_ENTITIES = "sensor.bad_entity,switch.noisy";
-      # Nordpool fires state_changed every 15 min but its attributes only
-      # change at midnight and ~13:00 CET. Throttle to one row per 6 h so
-      # ClickHouse gets 2-4 full-attribute rows/day instead of 96.
+      # Nordpool fires state_changed every 15 min but its state (the current
+      # hourly price) only changes once per hour. Throttle to one row per
+      # hour so ClickHouse gets a clean hourly state_float series (~24
+      # rows/day) for history graphs, instead of 96 rows/day. Every stored
+      # row still carries the full raw_today/raw_tomorrow attribute arrays.
       # Format: entity_id=min_seconds;...
-      THROTTLE_ENTITIES = "sensor.nordpool_kwh_dk1_dkk_3_10_0=21600";
+      THROTTLE_ENTITIES = "sensor.nordpool_kwh_dk1_dkk_3_10_0=3600";
     };
   };
 }
