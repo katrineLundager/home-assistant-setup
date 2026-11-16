@@ -229,7 +229,7 @@ attributes (hourly averages over the last 7 days, hours in Europe/Copenhagen):
 | `sensor.clickhouse_sun_elevation` | `avg(elevation)` from `sun.sun` attributes |
 | `sensor.clickhouse_temperature` | `avg(temperature)` from `weather.forecast_home` attributes |
 | `sensor.clickhouse_nordpool_price` | latest row's `raw_today`/`raw_tomorrow` from `attributes` JSON |
-| `sensor.clickhouse_nordpool_history` | hourly `state_float` (plus `raw_today` backfill from older rows) over the last 31 days, for the 1w/1mo price history chart |
+| `sensor.clickhouse_nordpool_history` | 15-min avg `state_float` over the last 31 days (pre-change slots materialized by `backfill_nordpool.sh`), for the 1w/1mo price history chart |
 
 The **ClickHouse** tab of the "A Hus!" dashboard (`home-assistant-dashboard.yaml`)
 renders them with `apexcharts-card` charts: daily consumption, sun elevation,
@@ -241,15 +241,16 @@ Notes:
 
 - `sun.sun` has no temperature attribute — temperature comes from the weather
   entity (`weather.forecast_home`).
-- The nordpool sensor fires `state_changed` every 15 min but its state (the
-  current hourly price) only changes once per hour. The ingestor throttles it
-  (`THROTTLE_ENTITIES`, 1 h) so ClickHouse stores ~24 rows/day instead of 96 —
-  a clean hourly `state_float` series that `clickhouse_nordpool_history` graphs.
-  Every stored row still carries the full `raw_today`/`raw_tomorrow` arrays,
-  which the history query also uses to backfill the days before the throttle
-  change; the dashboard price chart reads `raw_today`/`raw_tomorrow` directly
-  from the live HA entity, and `clickhouse_nordpool_price` reads them from the
-  latest stored row.
+- DK1 is a 15-minute electricity market, so the nordpool sensor fires
+  `state_changed` once per 15-min price slot and its `raw_today` array holds
+  96 slots/day. It is not throttled (`THROTTLE_ENTITIES` empty) — ClickHouse
+  stores ~96 rows/day, one per slot, which `clickhouse_nordpool_history`
+  graphs. `backfill_nordpool.sh` unfolds `raw_today` from the period before
+  this setup into the same one-row-per-slot shape (run it once with `--apply`;
+  it is idempotent). The dashboard price chart reads
+  `raw_today`/`raw_tomorrow` directly from the live HA entity, and
+  `clickhouse_nordpool_price` reads them from the latest stored row
+  (`last_updated <= now()`, i.e. strictly historical rows).
 - Hours are formatted server-side in Europe/Copenhagen, so chart times match
   local time (the raw `last_updated` column is stored in UTC).
 

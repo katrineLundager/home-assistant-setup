@@ -167,12 +167,13 @@
             # The ingestor throttles nordpool to one row per hour (see
             # THROTTLE_ENTITIES); every stored row still carries the full
             # today/tomorrow price arrays, so we read them from that row's
-            # attributes JSON.
+            # attributes JSON. The last_updated <= now() guard keeps the
+            # query on strictly historical rows.
             # raw_today/raw_tomorrow arrive as JSON-encoded strings; the
             # dashboard data_generator does JSON.parse() on them.
             name = "ClickHouse Nordpool Price";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT state_float AS price, JSONExtract(attributes, 'raw_today') AS raw_today, JSONExtract(attributes, 'raw_tomorrow') AS raw_tomorrow, JSONExtract(attributes, 'today') AS today, JSONExtract(attributes, 'tomorrow') AS tomorrow FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL ORDER BY last_updated DESC LIMIT 1"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT state_float AS price, JSONExtractRaw(attributes, 'raw_today') AS raw_today, JSONExtractRaw(attributes, 'raw_tomorrow') AS raw_tomorrow, JSONExtractRaw(attributes, 'today') AS today, JSONExtractRaw(attributes, 'tomorrow') AS tomorrow FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated <= now() ORDER BY last_updated DESC LIMIT 1"
             '';
             value_template = "{{ value_json.price | default(0) }}";
             json_attributes = [
@@ -186,25 +187,26 @@
         }
         {
           sensor = {
-            # Hourly nordpool spot prices for history graphs (1w and longer).
-            # Two sources are UNIONed: the hourly state_float rows stored
-            # since the throttle was lowered to 1 h, and the raw_today arrays
-            # still present on the older 6 h-throttled rows, so the period
-            # before the throttle change is backfilled too. Duplicate hours
-            # collapse in the outer avg().
-            # 31 days hourly (~744 points) covers a 1w card today and a 1mo
-            # card later; for 3m/5y add a sensor with a coarser GROUP BY
-            # (day/week/month) to keep the attribute payload small.
+            # 15-min nordpool spot prices for history graphs (1w and longer).
+            # Plain state_float time series: one row per 15-min price slot
+            # arrives live from the ingestor (no throttle), and the period
+            # before that was materialized the same way by backfill_nordpool.sh.
+            # Duplicate slots collapse in avg(). NOTE: DK1 is a 15-min market,
+            # so last_updated slots nicely onto toStartOfFifteenMinutes.
+            # 31 days of 15-min slots (~3k points) covers a 1w/1mo card; for
+            # 3m/5y add a sensor with a coarser GROUP BY (hour/day/week) to
+            # keep the attribute payload small. The attribute name stays
+            # "hour" for the dashboard data_generator.
             name = "ClickHouse Nordpool History";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(toDateTime(ts)), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(price) AS price FROM (SELECT toUnixTimestamp(last_updated) AS ts, state_float AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY UNION ALL SELECT toUnixTimestamp(parseDateTimeBestEffort(JSONExtractString(item, 'start'))) AS ts, toFloat64(JSONExtractString(item, 'value')) AS price FROM homeassistant.states, arrayJoin(JSONExtractArrayRaw(attributes, 'raw_today')) AS item WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND last_updated >= now() - INTERVAL 31 DAY) GROUP BY toStartOfHour(toDateTime(ts)) ORDER BY toStartOfHour(toDateTime(ts))"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfFifteenMinutes(last_updated), '%Y-%m-%dT%H:%M:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.price | default([]) | last | default(0) }}";
             json_attributes = [
               "hour"
               "price"
             ];
-            # Prices only change hourly, so polling faster is wasted work.
+            # Prices only change every 15 min, so polling faster is wasted work.
             scan_interval = 300;
           };
         }
@@ -387,13 +389,12 @@
       FLUSH_INTERVAL = "5";
       INCLUDE_ATTRIBUTES = "true";
       # EXCLUDE_ENTITIES = "sensor.bad_entity,switch.noisy";
-      # Nordpool fires state_changed every 15 min but its state (the current
-      # hourly price) only changes once per hour. Throttle to one row per
-      # hour so ClickHouse gets a clean hourly state_float series (~24
-      # rows/day) for history graphs, instead of 96 rows/day. Every stored
-      # row still carries the full raw_today/raw_tomorrow attribute arrays.
+      # No per-entity throttling: nordpool is on the 15-min DK1 market, so
+      # its state (the current price) changes once per 15-min slot and the
+      # sensor fires ~96 times/day naturally — every slot's price is stored
+      # with its full raw_today/raw_tomorrow attribute arrays.
       # Format: entity_id=min_seconds;...
-      THROTTLE_ENTITIES = "sensor.nordpool_kwh_dk1_dkk_3_10_0=3600";
+      THROTTLE_ENTITIES = "";
     };
   };
 }
