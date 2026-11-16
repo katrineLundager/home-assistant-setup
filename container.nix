@@ -199,7 +199,7 @@
             # "hour" for the dashboard data_generator.
             name = "ClickHouse Nordpool History";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfFifteenMinutes(last_updated), '%Y-%m-%dT%H:%M:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY GROUP BY hour ORDER BY hour"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfFifteenMinutes(last_updated), '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.price | default([]) | last | default(0) }}";
             json_attributes = [
