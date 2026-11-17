@@ -66,7 +66,7 @@ views:
               rows: 8
             apex_config:
               chart:
-                height: 250px
+                height: 350px
             header:
               show: true
               title: Historic electricity prices
@@ -130,10 +130,20 @@ views:
                     ])
                     return [...forecast]
 
+ 
+
+
+
+
+  - title: Currently consuming
+    path: currently_consumption
+    max_colums: 4
+    type: sections
+    sections:
+
       - type: grid
         column_span: 2
         cards:
-
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -143,36 +153,28 @@ views:
                 height: 250px
             header:
               show: true
-              title: Motorcycle Energy
+              title: Car consumption
               show_states: true
               colorize_states: true
-            graph_span: 14d
+            graph_span: 48h
             span:
-              start: day
-              offset: -14d
+              start: hour
             now:
               show: true
               label: Now
             hours_12: false
             series:
-              - entity: sensor.clickhouse_motorcycle_energy
+              - entity: sensor.clickhouse_car_consumption
                 extend_to: false
-                name: Motorcycle energy
+                name: Car consumption
                 data_generator: |
-                  const hours = entity.attributes.hour || [];
-                  const vals = entity.attributes.energy || [];
-                  return hours.map((h, i) => [
+                  const minutes = entity.attributes.minute || [];
+                  const vals = entity.attributes.consumption || [];
+                  return minutes.map((h, i) => [
                     new Date(h).getTime(),
                     Number(vals[i])
                   ])
 
-
-
-  - title: Currently consuming
-    path: currently_consumption
-    max_colums: 4
-    type: sections
-    sections:
 
       - type: grid
         column_span: 2
@@ -463,13 +465,12 @@ views:
 
 
 
-  # ── ClickHouse-backed charts ────────────────────────────────────
-  # Data comes from command_line sensors (see container.nix) that query
-  # ClickHouse server-side and expose parallel arrays as attributes
-  # (day/consumption, hour/elevation, hour/temperature, hour/price).
-  # The data_generators read them synchronously — no browser fetch / CORS.
-  - title: ClickHouse
-    path: clickhouse
+
+
+
+
+  - title: Weather and consumption 
+    path: weather
     type: sections
     max_columns: 4
     sections:
