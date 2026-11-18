@@ -109,10 +109,33 @@ views:
               title: Electricity consumption 
               show_states: true
               colorize_states: true
+            graph_span: 1h
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.smart_meter_ts_65a_3_real_power
+                extend_to: false
+                name: Hourly consumption data
+
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 350px
+            header:
+              show: true
+              title: Hourly electricity consumption 
+              show_states: true
+              colorize_states: true
             graph_span: 48h
             span:
               start: hour
-              offset: "-5d"
+              offset: "-2d"
             now:
               show: true
               label: Now
@@ -132,11 +155,19 @@ views:
 
  
 
+#############################################################################
+#############################################################################
+##                           Currently consuming                           ##
+#############################################################################
+#############################################################################
+
+
+
 
 
 
   - title: Currently consuming
-    path: currently_consumption
+    path: currently_consuming
     max_colums: 4
     type: sections
     sections:
@@ -214,7 +245,35 @@ views:
 
 
 
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 250px
+            header:
+              show: true
+              title: Electricity consumption 
+              show_states: true
+              colorize_states: true
+            graph_span: 1h
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.smart_meter_ts_65a_3_real_power
+                extend_to: false
+                name: Hourly consumption data
 
+
+
+#############################################################################
+#############################################################################
+##                           Historic consumption                          ##
+#############################################################################
+#############################################################################
 
 
 
@@ -567,4 +626,117 @@ views:
                   return hours.map((h, i) => [
                     new Date(h).getTime(),
                     Number(vals[i])
-                  ]);
+                  ])
+
+
+  - title: Solar
+    path: solar
+    type: sections
+    max_columns: 4
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 350px
+              legend:
+                show: true
+                position: bottom
+            header:
+              show: true
+              title: Power flow (W)
+            graph_span: 48h
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.solarnet_power_photovoltaics
+                name: Photovoltaics
+                type: column
+              - entity: sensor.solarnet_power_load_consumed
+                name: Load consumed
+                type: line
+              - entity: sensor.solarnet_power_grid_import
+                name: Grid import
+                type: line
+              - entity: sensor.solarnet_power_grid_export
+                name: Grid export
+                type: line
+              - entity: sensor.solarnet_power_battery_charge
+                name: Battery charge
+                type: line
+              - entity: sensor.solarnet_power_battery_discharge
+                name: Battery discharge
+                type: line
+
+      - type: grid
+        column_span: 2
+        cards:
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 350px
+              legend:
+                show: true
+                position: bottom
+            header:
+              show: true
+              title: Battery (reserva)
+            graph_span: 24h
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            yaxis:
+              - id: soc
+                min: 0
+                max: 100
+              - id: dc
+                opposite: true
+                min: 0
+            series:
+              - entity: sensor.reserva_state_of_charge
+                name: State of charge (%)
+                yaxis_id: soc
+              - entity: sensor.solarnet_power_battery_charge
+                name: Battery charge (W)
+                yaxis_id: dc
+              - entity: sensor.solarnet_power_battery_discharge
+                name: Battery discharge (W)
+                yaxis_id: dc
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 8
+            apex_config:
+              chart:
+                height: 250px
+              legend:
+                show: true
+                position: bottom
+            header:
+              show: true
+              title: Autonomy and self-consumption (%)
+            graph_span: 24h
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            yaxis:
+              - min: 0
+                max: 100
+            series:
+              - entity: sensor.solarnet_relative_autonomy
+                name: Autonomy
+              - entity: sensor.solarnet_relative_self_consumption
+                name: Self-consumption
