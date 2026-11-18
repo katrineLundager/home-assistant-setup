@@ -124,7 +124,10 @@ views:
 
 
 
-
+      - type: grid
+        column_span: 4
+        cards:
+ 
 
           - type: custom:apexcharts-card
             grid_options:
@@ -147,40 +150,6 @@ views:
               - entity: sensor.smart_meter_ts_65a_3_real_power
                 extend_to: false
                 name: Hourly consumption data
-
-
-          - type: custom:apexcharts-card
-            grid_options:
-              columns: full
-              rows: 8
-            apex_config:
-              chart:
-                height: 350px
-            header:
-              show: true
-              title: Hourly electricity consumption 
-              show_states: true
-              colorize_states: true
-            graph_span: 48h
-            span:
-              start: hour
-              offset: "-2d"
-            now:
-              show: true
-              label: Now
-            hours_12: false
-            series:
-              - entity: sensor.clickhouse_hourly_consumption_from_nrgi
-                extend_to: false
-                name: Hourly consumption data
-                data_generator: |
-                    const hours = entity.attributes.hour || [];
-                    const vals = entity.attributes.consumption || [];
-                    const forecast = hours.map((h, i) => [
-                      new Date(h).getTime(),
-                      Number(vals[i])
-                    ])
-                    return [...forecast]
 
  
 
@@ -688,6 +657,53 @@ views:
             apex_config:
               chart:
                 height: 350px
+            header:
+              show: true
+              title: PV Energy Generation
+            graph_span: 1d
+            now:
+              show: true
+              label: Now
+            yaxis:
+              - id: PV
+                min: 0
+              - id: lux
+                min: 0
+                opposite: true
+            series:
+              - entity: sensor.clickhouse_hourly_generation_from_solarnet
+                yaxis_id: PV
+                name: Generated Energy (kWh)
+                type: column
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.consumption || [];
+                  return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ]);
+
+              - entity: sensor.clickhouse_lux_0xfd01
+                name: Lux
+                yaxis_id: lux
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.lux || [];
+                  return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ]);
+
+      - type: grid
+        column_span: 2
+        cards:
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: 7
+            apex_config:
+              chart:
+                height: 350px
               legend:
                 show: true
                 position: bottom
@@ -758,6 +774,9 @@ views:
                 name: Battery discharge (W)
                 yaxis_id: dc
 
+      - type: grid
+        column_span: 2
+        cards:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -785,48 +804,4 @@ views:
               - entity: sensor.solarnet_relative_self_consumption
                 name: Self-consumption
 
-
-          - type: custom:apexcharts-card
-            grid_options:
-              columns: full
-              rows: 7
-            apex_config:
-              chart:
-                height: 350px
-            header:
-              show: true
-              title: PV Energy Generation
-            graph_span: 1d
-            now:
-              show: true
-              label: Now
-            yaxis:
-              - id: PV
-                min: 0
-              - id: lux
-                min: 0
-                opposite: true
-            series:
-              - entity: sensor.clickhouse_hourly_generation_from_solarnet
-                yaxis_id: PV
-                name: Generated Energy (kWh)
-                type: column
-                data_generator: |
-                  const hours = entity.attributes.hour || [];
-                  const vals = entity.attributes.consumption || [];
-                  return hours.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ]);
-
-              - entity: sensor.clickhouse_lux_0xfd01
-                name: Lux
-                yaxis_id: lux
-                data_generator: |
-                  const hours = entity.attributes.hour || [];
-                  const vals = entity.attributes.lux || [];
-                  return hours.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ]);
 
