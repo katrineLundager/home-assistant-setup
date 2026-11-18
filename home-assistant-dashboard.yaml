@@ -582,6 +582,7 @@ views:
             yaxis:
               - id: primary
               - id: secondary
+                min: 0
                 opposite: true
             series:
               - entity: sensor.clickhouse_lux_0xfd01
