@@ -15,6 +15,8 @@ views:
       - type: grid
         column_span: 2
         cards:
+
+
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -33,10 +35,17 @@ views:
             now:
               show: true
               label: Now
+            yaxis:
+              - id: price
+                min: 0
+              - id: consumption
+                min: 0
+                opposite: true
             hours_12: false
             series:
               - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
                 extend_to: false
+                yaxis_id: price
                 name: Current prices
                 data_generator: |
                   const rawToday = entity.attributes.raw_today || [];
@@ -49,6 +58,7 @@ views:
 
               - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
                 extend_to: false
+                yaxis_id: price
                 name: Tomorrows prices
                 data_generator: |
                   const rawTomorrow = entity.attributes.raw_tomorrow || [];
@@ -59,6 +69,19 @@ views:
 
                   return [...forecast]
 
+              - entity: sensor.clickhouse_hourly_consumption_from_nrgi
+                extend_to: false
+                yaxis_id: consumption
+                type: column
+                name: Hourly consumption data (kWh)
+                data_generator: |
+                    const hours = entity.attributes.hour || [];
+                    const vals = entity.attributes.consumption || [];
+                    const forecast = hours.map((h, i) => [
+                      new Date(h).getTime(),
+                      Number(vals[i])
+                    ])
+                    return [...forecast]
 
 
       - type: grid
@@ -765,8 +788,8 @@ views:
 
           - type: custom:apexcharts-card
             grid_options:
-            columns: full
-            rows: 7
+              columns: full
+              rows: 7
             apex_config:
               chart:
                 height: 350px
@@ -782,6 +805,7 @@ views:
                 min: 0
               - id: lux
                 min: 0
+                opposite: true
             series:
               - entity: sensor.clickhouse_hourly_generation_from_solarnet
                 yaxis_id: PV
