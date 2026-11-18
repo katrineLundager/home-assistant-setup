@@ -178,7 +178,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 6
             apex_config:
               chart:
                 height: 250px
@@ -213,7 +213,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 6
             apex_config:
               chart:
                 height: 250px
@@ -248,7 +248,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 6
             apex_config:
               chart:
                 height: 250px
@@ -397,7 +397,7 @@ views:
       - type: custom:apexcharts-card
         grid_options:
           columns: full
-          rows: 8
+          rows: 10
         apex_config:
           chart:
             height: 550px
@@ -456,7 +456,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 6
             apex_config:
               chart:
                 height: 250px
