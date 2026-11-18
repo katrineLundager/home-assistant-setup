@@ -78,10 +78,13 @@
             # and the smart meter's real power (W), which is integrated
             # time-weighted: each sample's watts times the seconds until
             # the next sample, summed per day and divided by 3.6e6 (J per
-            # kWh). The last sample per day has no successor (dt IS NULL)
-            # and is skipped by sum().
+            # kWh). NOTE: leadInFrame needs an explicit frame ending at
+            # 1 FOLLOWING — with the default frame it has no following row
+            # and returns the DateTime zero value (1970-01-01) instead of
+            # NULL, yielding dt of -1.8e9 seconds. greatest(..., 0)
+            # neutralizes the zero default on the final sample of each day.
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT day, sum(consumption) AS consumption FROM (SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day UNION ALL SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT toDate(last_updated) AS day, state_float AS w, dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toDate(last_updated) ORDER BY last_updated)) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) GROUP BY day) GROUP BY day ORDER BY day"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT day, sum(consumption) AS consumption FROM (SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day UNION ALL SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT day, w, dt FROM (SELECT toDate(last_updated) AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toDate(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY)) GROUP BY day) GROUP BY day ORDER BY day"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             json_attributes = [
@@ -97,9 +100,10 @@
             name = "ClickHouse Monthly Consumption From NRGI";
             # Same two-source combination as the daily sensor: NRGI kWh
             # summed directly + smart meter W integrated time-weighted
-            # per month (watts x seconds until next sample / 3.6e6).
+            # per month (watts x seconds until next sample / 3.6e6),
+            # with the same explicit-window-frame fix as the daily query.
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT month, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' GROUP BY month UNION ALL SELECT month, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, state_float AS w, dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfMonth(last_updated) ORDER BY last_updated)) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL) GROUP BY month) GROUP BY month ORDER BY month"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT month, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' GROUP BY month UNION ALL SELECT month, sum(w * dt) / 3600000 AS consumption FROM (SELECT month, w, dt FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfMonth(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL)) GROUP BY month) GROUP BY month ORDER BY month"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             json_attributes = [
@@ -115,9 +119,10 @@
             name = "ClickHouse Hourly Consumption From NRGI";
             # Same two-source combination as the daily sensor: NRGI kWh
             # summed directly + smart meter W integrated time-weighted
-            # per hour (watts x seconds until next sample / 3.6e6).
+            # per hour (watts x seconds until next sample / 3.6e6),
+            # with the same explicit-window-frame fix as the daily query.
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour UNION ALL SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated)) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) GROUP BY hour) GROUP BY hour ORDER BY hour"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour UNION ALL SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT hour, w, dt FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY)) GROUP BY hour) GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             json_attributes = [
