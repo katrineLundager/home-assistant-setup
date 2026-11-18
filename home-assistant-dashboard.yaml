@@ -1,5 +1,11 @@
 title: My Home 
 views:
+
+#############################################################################
+#############################################################################
+##                Elictricity prices and corresponding consuption          ##
+#############################################################################
+#############################################################################
   - title: Energy
     path: energy
     type: sections
@@ -527,6 +533,12 @@ views:
 
 
 
+#############################################################################
+#############################################################################
+##                           Weather and consumption                       ##
+#############################################################################
+#############################################################################
+
 
   - title: Weather and consumption 
     path: weather
@@ -629,6 +641,15 @@ views:
                   ])
 
 
+
+#############################################################################
+#############################################################################
+##                           Solar                                         ##
+#############################################################################
+#############################################################################
+
+
+
   - title: Solar
     path: solar
     type: sections
@@ -640,7 +661,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 7
             apex_config:
               chart:
                 height: 350px
@@ -681,7 +702,7 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 7
             apex_config:
               chart:
                 height: 350px
@@ -717,10 +738,10 @@ views:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
-              rows: 8
+              rows: 7
             apex_config:
               chart:
-                height: 250px
+                height: 350px
               legend:
                 show: true
                 position: bottom
@@ -740,3 +761,48 @@ views:
                 name: Autonomy
               - entity: sensor.solarnet_relative_self_consumption
                 name: Self-consumption
+
+
+          - type: custom:apexcharts-card
+            grid_options:
+            columns: full
+            rows: 7
+            apex_config:
+              chart:
+                height: 350px
+            header:
+              show: true
+              title: PV Energy Generation
+            graph_span: 1d
+            now:
+              show: true
+              label: Now
+            yaxis:
+              - id: PV
+                min: 0
+              - id: lux
+                min: 0
+            series:
+              - entity: sensor.clickhouse_hourly_generation_from_solarnet
+                yaxis_id: PV
+                name: Generated Energy (kWh)
+                type: column
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.consumption || [];
+                  return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ]);
+
+              - entity: sensor.clickhouse_lux_0xfd01
+                name: Lux
+                yaxis_id: lux
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.lux || [];
+                  return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ]);
+
