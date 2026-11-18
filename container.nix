@@ -125,9 +125,11 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour UNION ALL SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT hour, w, dt FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY)) GROUP BY hour) GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+
             json_attributes = [
               "hour"
               "consumption"
+              "unit_of_measurement: kWh"
             ];
             scan_interval = 5;
           };
