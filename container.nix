@@ -171,6 +171,24 @@
         }
         {
           sensor = {
+            # -> sensor.clickhouse_daily_generation_from_solarnet
+            # Today's total photovoltaic energy (kWh), for the PV gauge:
+            # the same staircase integral as the hourly sensor above,
+            # summed over the whole day instead of grouped per hour.
+            # toStartOfDay(now()) is evaluated in the container's local
+            # timezone (Europe/Copenhagen), matching the hour labels.
+            name = "ClickHouse Daily Generation From SolarNet";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT sum(w * dt) / 3600000 AS consumption FROM (SELECT state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= toStartOfDay(now()))"
+            '';
+            value_template = "{{ value_json.consumption | default(0) }}";
+            unit_of_measurement = "kWh";
+            state_class = "measurement";
+            scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
             # Hourly average sun elevation, from sun.sun's `elevation`
             # attribute (the ingestor stores full attributes as JSON).
             name = "ClickHouse Sun Elevation";
@@ -303,12 +321,17 @@
             # change). Energy is therefore a staircase integral: each
             # sample's power is held until the next sample:
             #   kWh = sum(power_W * seconds_to_next_sample) / 3600 / 1000
-            # leadInFrame(last_updated) OVER (ORDER BY last_updated) yields
-            # the next sample's timestamp; the last sample has none (-> 0).
+            # leadInFrame needs an explicit frame ending at 1 FOLLOWING —
+            # with the default frame (RANGE UNBOUNDED PRECEDING TO CURRENT
+            # ROW) it has no following row and returns the DateTime zero
+            # value (1970-01-01) instead of NULL, yielding dt of -1.8e9
+            # seconds and huge negative kWh. On the final sample there is
+            # no next row, so guard with next_ts > last_updated (same fix
+            # as the smart-meter query above).
             # NOTE: %i is minutes in ClickHouse formatDateTime (%M = month).
             name = "ClickHouse Car Consumption";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(s.m, '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, s.kwh AS consumption FROM (SELECT toStartOfMinute(last_updated) AS m, sum(if(next_ts IS NULL, 0, state_float * dateDiff('second', last_updated, next_ts)) / 3600 / 1000) AS kwh FROM (SELECT last_updated, state_float, leadInFrame(last_updated) OVER w AS next_ts FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR WINDOW w AS (ORDER BY last_updated)) AS d GROUP BY m) AS s ORDER BY m"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(s.m, '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, s.kwh AS consumption FROM (SELECT toStartOfMinute(last_updated) AS m, sum(if(next_ts > last_updated, state_float * dateDiff('second', last_updated, next_ts), 0) / 3600 / 1000) AS kwh FROM (SELECT last_updated, state_float, leadInFrame(last_updated) OVER w AS next_ts FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR WINDOW w AS (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)) AS d GROUP BY m) AS s ORDER BY m"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
