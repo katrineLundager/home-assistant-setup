@@ -1,0 +1,16 @@
+
+include_attributes = true
+exclude_entities = ["",1]
+[ha]
+ws_url = "ws://supervisor/core/websocket"
+supervisor_token = ""
+
+[clickhouse]
+port = 8123
+user = "default"
+database = "homeassistant"
+table = "states"
+host = "localhost"
+
+
+

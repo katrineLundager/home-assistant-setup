@@ -170,6 +170,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'elevation')) AS elevation FROM homeassistant.states WHERE entity_id = 'sun.sun' AND JSONHas(attributes, 'elevation') AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.elevation | default([]) | last | default(0) }}";
+            unit_of_measurement = "°";
             json_attributes = [
               "hour"
               "elevation"
@@ -186,6 +187,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'temperature')) AS temperature FROM homeassistant.states WHERE entity_id = 'weather.forecast_home' AND JSONHas(attributes, 'temperature') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
+            unit_of_measurement = "°C";
             json_attributes = [
               "hour"
               "temperature"
@@ -208,6 +210,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT state_float AS price, JSONExtractRaw(attributes, 'raw_today') AS raw_today, JSONExtractRaw(attributes, 'raw_tomorrow') AS raw_tomorrow, JSONExtractRaw(attributes, 'today') AS today, JSONExtractRaw(attributes, 'tomorrow') AS tomorrow FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated <= now() ORDER BY last_updated DESC LIMIT 1"
             '';
             value_template = "{{ value_json.price | default(0) }}";
+            unit_of_measurement = "DKK/kWh";
             json_attributes = [
               "raw_today"
               "raw_tomorrow"
@@ -234,6 +237,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfFifteenMinutes(last_updated), '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.price | default([]) | last | default(0) }}";
+            unit_of_measurement = "DKK/kWh";
             json_attributes = [
               "hour"
               "price"
@@ -254,6 +258,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            unit_of_measurement = "kWh";
             json_attributes = [
               "hour"
               "energy"
@@ -273,6 +278,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            unit_of_measurement = "kWh";
             json_attributes = [
               "hour"
               "energy"
@@ -297,6 +303,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(s.m, '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, s.kwh AS consumption FROM (SELECT toStartOfMinute(last_updated) AS m, sum(if(next_ts IS NULL, 0, state_float * dateDiff('second', last_updated, next_ts)) / 3600 / 1000) AS kwh FROM (SELECT last_updated, state_float, leadInFrame(last_updated) OVER w AS next_ts FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR WINDOW w AS (ORDER BY last_updated)) AS d GROUP BY m) AS s ORDER BY m"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            unit_of_measurement = "kWh";
             json_attributes = [
               "minute"
               "consumption"
@@ -316,6 +323,7 @@
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfMinute(last_updated), '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR GROUP BY minute ORDER BY minute"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            unit_of_measurement = "kWh";
             json_attributes = [
               "minute"
               "consumption"
@@ -335,6 +343,7 @@
               TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(lux) AS lux FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.lux | default([]) | last | default(0) }}";
+            unit_of_measurement = "lux";
             json_attributes = [
               "hour"
               "lux"
@@ -350,9 +359,42 @@
               TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(temperature) AS temperature FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
+            unit_of_measurement = "°C";
             json_attributes = [
               "hour"
               "temperature"
+            ];
+            scan_interval = 5;
+          };
+        }
+       {
+          sensor = {
+            # -> sensor.clickhouse_temperature_0xfd01
+            name = "ClickHouse Temperature 0xfd01";
+            command = ''
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(temperature) AS temperature FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
+            '';
+            value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
+            unit_of_measurement = "°C";
+            json_attributes = [
+              "hour"
+              "temperature"
+            ];
+            scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
+            # -> sensor.clickhouse_temperature_0xfd01
+            name = "ClickHouse Rain 0xfd01";
+            command = ''
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(rain_1hr) AS rain FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
+            '';
+            value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
+            unit_of_measurement = "0.01mm";
+            json_attributes = [
+              "hour"
+              "rain"
             ];
             scan_interval = 5;
           };

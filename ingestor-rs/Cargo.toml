@@ -1,0 +1,9 @@
+[package]
+name = "clickhouse-ingestor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+config = "0.15.27"
+secrecy = { version = "0.10.3", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
