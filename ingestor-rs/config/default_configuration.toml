@@ -2,6 +2,8 @@ flush_interval = 5
 batch_size = 500
 include_attributes = true
 exclude_entities = ["sensor.sun","home.user"]
+throttle_entities = {"sensor.sun"=1.1}
+
 [ha]
 ws_url = "ws://supervisor/core/websocket"
 supervisor_token = ""

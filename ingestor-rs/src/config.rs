@@ -13,6 +13,8 @@ pub struct Configuration {
     include_attributes: bool,
     #[serde(deserialize_with = "deserialize_entity_set")]
     exclude_entities: HashSet<String>,
+    #[serde(deserialize_with = "deserialize_entity_map")]
+    throttle_entities: HashMap<String, f64>,
     ha: Ha,
     clickhouse: Clickhouse,
 }
@@ -97,6 +99,43 @@ impl TryFrom<u16> for Port{
     }
 }
 
+
+
+fn deserialize_entity_map<'de, D>(deserializer: D) -> Result<HashMap<String, f64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct EntityMapVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for EntityMapVisitor {
+        type Value = HashMap<String, f64>;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("a semicolon-separated string or a list of entity ids and their values. Ex: 'sensor.nordpool=3600; sensor.y=abc'") 
+        }
+
+        fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+            Ok(clean_entity_map(v.split(';')))
+        }
+
+        fn visit_map<A: serde::de::MapAccess<'de>>(
+            self,
+            mut map: A,
+        ) -> Result<Self::Value, A::Error> {
+            let mut set = HashMap::new();
+            while let Some((id, secs)) = map.next_entry::<String, f64>()? {
+                set.insert(id,secs);
+            }
+            Ok(set)
+        }
+    }
+
+    // deserialize_any: lets the data decide which visit_* method runs,
+    // instead of us declaring one input shape up front.
+    deserializer.deserialize_any(EntityMapVisitor)
+}
+
+
 // serde can hand us the exclude list in two shapes: a comma-separated
 // string (env source) or a sequence (TOML source). ingestor.py:74-76
 // trims whitespace and drops empty entries; we must reproduce both rules
@@ -136,6 +175,19 @@ where
     deserializer.deserialize_any(EntitySetVisitor)
 }
 
+fn parse_throttle_entry(entry: &str) -> Option<(String, f64)> {
+    let (id, secs) = entry.split_once("=")?;
+    let id = id.trim();
+    let secs = secs.trim().parse().ok()?;
+
+    (!id.is_empty()).then_some((id.to_string(), secs))
+
+}
+fn clean_entity_map<S: AsRef<str>>(items: impl Iterator<Item = S>) -> HashMap<String,f64> {
+    items
+        .filter_map(|s| parse_throttle_entry(s.as_ref()))
+        .collect()
+}
 fn clean_entity_ids<S: AsRef<str>>(items: impl Iterator<Item = S>) -> HashSet<String> {
     items
         .map(|s| s.as_ref().trim().to_string())
@@ -224,6 +276,9 @@ mod test {
         // TOML excludes survive the seq path of the deserializer.
         assert!(config.exclude_entities.contains("sensor.sun"));
         assert!(config.exclude_entities.contains("home.user"));
+        // TOML inline table supplies the throttle map directly.
+        assert_eq!(config.throttle_entities.get("sensor.sun"), Some(&1.1));
+        assert_eq!(config.throttle_entities.len(), 1);
 
         // ── 2. Overrides + secret redaction: the Debug render must never
         // leak the password (SecretString's whole reason to exist).
@@ -278,6 +333,25 @@ mod test {
             "empty entries must be dropped"
         );
         assert_eq!(config.exclude_entities.len(), 2);
+
+        // ── 6. THROTTLE_ENTITIES: "entity=seconds;..." with garbage entries
+        // silently skipped (ingestor.py:60-69, Python's `except ValueError: pass`)
+        set_env(&[
+            ("CLICKHOUSE__HOST", "ch"),
+            ("HA__SUPERVISOR_TOKEN", "tok"),
+            ("THROTTLE_ENTITIES", " sensor.nordpool=3600 ; junk ; sensor.y=abc ;"),
+        ]);
+        let config = Configuration::from_env()
+            .expect("accepts throttle map from env string");
+        assert_eq!(
+            config.throttle_entities.get("sensor.nordpool"),
+            Some(&3600.0)
+        );
+        assert_eq!(
+            config.throttle_entities.len(),
+            1,
+            "'junk' (no '=') and 'sensor.y=abc' (unparseable) must be skipped"
+        );
 
         // Leave the process clean for any other tests.
         for var in ALL_ENV_VARS {
