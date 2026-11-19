@@ -19,7 +19,6 @@ pub struct Configuration {
     clickhouse: Clickhouse,
 }
 
-
 #[derive(Clone, Debug, Deserialize)]
 #[serde(try_from = "u32")]
 struct FlushInterval(u32);
@@ -88,18 +87,18 @@ impl TryFrom<u32> for BatchSize {
     }
 }
 
-impl TryFrom<u16> for Port{
+impl TryFrom<u16> for Port {
     type Error = String;
     fn try_from(v: u16) -> Result<Self, Self::Error> {
-        if (v >= 1000) && (v <= 9999) {
+        if (1000..=9999).contains(&v) {
             Ok(Port(v))
         } else {
-            Err(format!("Port must be atleast 1000 and no more than 9999. Not {v}."))
+            Err(format!(
+                "Port must be atleast 1000 and no more than 9999. Not {v}."
+            ))
         }
     }
 }
-
-
 
 fn deserialize_entity_map<'de, D>(deserializer: D) -> Result<HashMap<String, f64>, D::Error>
 where
@@ -111,7 +110,7 @@ where
         type Value = HashMap<String, f64>;
 
         fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            f.write_str("a semicolon-separated string or a list of entity ids and their values. Ex: 'sensor.nordpool=3600; sensor.y=abc'") 
+            f.write_str("a semicolon-separated string or a list of entity ids and their values. Ex: 'sensor.nordpool=3600; sensor.y=abc'")
         }
 
         fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
@@ -124,7 +123,7 @@ where
         ) -> Result<Self::Value, A::Error> {
             let mut set = HashMap::new();
             while let Some((id, secs)) = map.next_entry::<String, f64>()? {
-                set.insert(id,secs);
+                set.insert(id, secs);
             }
             Ok(set)
         }
@@ -134,7 +133,6 @@ where
     // instead of us declaring one input shape up front.
     deserializer.deserialize_any(EntityMapVisitor)
 }
-
 
 // serde can hand us the exclude list in two shapes: a comma-separated
 // string (env source) or a sequence (TOML source). ingestor.py:74-76
@@ -181,9 +179,8 @@ fn parse_throttle_entry(entry: &str) -> Option<(String, f64)> {
     let secs = secs.trim().parse().ok()?;
 
     (!id.is_empty()).then_some((id.to_string(), secs))
-
 }
-fn clean_entity_map<S: AsRef<str>>(items: impl Iterator<Item = S>) -> HashMap<String,f64> {
+fn clean_entity_map<S: AsRef<str>>(items: impl Iterator<Item = S>) -> HashMap<String, f64> {
     items
         .filter_map(|s| parse_throttle_entry(s.as_ref()))
         .collect()
@@ -200,7 +197,6 @@ fn config_path(filename: &str) -> PathBuf {
         .map_or_else(|_| PathBuf::from("config"), PathBuf::from)
         .join(filename)
 }
-
 
 #[cfg(test)]
 mod test {
@@ -261,8 +257,8 @@ mod test {
     fn env_loading_matches_ingestor_py() {
         // ── 1. Python defaults: BATCH_SIZE=500, FLUSH_INTERVAL=5 (ingestor.py:71-72)
         set_env(&[("CLICKHOUSE__HOST", "ch"), ("HA__SUPERVISOR_TOKEN", "tok")]);
-        let config =
-            Configuration::from_env().expect("batch_size and flush_interval should have defaults (Python: 500 and 5)");
+        let config = Configuration::from_env()
+            .expect("batch_size and flush_interval should have defaults (Python: 500 and 5)");
         assert_eq!(config.batch_size.0, 500);
         assert_eq!(config.flush_interval.0, 5);
         // TOML defaults survive when env is silent (ingestor.py:40-56)
@@ -339,10 +335,12 @@ mod test {
         set_env(&[
             ("CLICKHOUSE__HOST", "ch"),
             ("HA__SUPERVISOR_TOKEN", "tok"),
-            ("THROTTLE_ENTITIES", " sensor.nordpool=3600 ; junk ; sensor.y=abc ;"),
+            (
+                "THROTTLE_ENTITIES",
+                " sensor.nordpool=3600 ; junk ; sensor.y=abc ;",
+            ),
         ]);
-        let config = Configuration::from_env()
-            .expect("accepts throttle map from env string");
+        let config = Configuration::from_env().expect("accepts throttle map from env string");
         assert_eq!(
             config.throttle_entities.get("sensor.nordpool"),
             Some(&3600.0)
@@ -359,4 +357,3 @@ mod test {
         }
     }
 }
-
