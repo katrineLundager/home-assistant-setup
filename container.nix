@@ -398,22 +398,6 @@
             scan_interval = 5;
           };
         }
-       {
-          sensor = {
-            # -> sensor.clickhouse_temperature_0xfd01
-            name = "ClickHouse Temperature 0xfd01";
-            command = ''
-              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(temperature) AS temperature FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
-            '';
-            value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
-            unit_of_measurement = "°C";
-            json_attributes = [
-              "hour"
-              "temperature"
-            ];
-            scan_interval = 5;
-          };
-        }
         {
           sensor = {
             # -> sensor.clickhouse_temperature_0xfd01
