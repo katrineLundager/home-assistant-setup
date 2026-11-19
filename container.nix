@@ -401,6 +401,36 @@
         }
       ];
 
+      # Workaround for the nordpool component not picking up day-ahead
+      # prices (custom-components/nordpool issues #528 / #539): prices
+      # publish ~13:00 CET, but the integration often keeps a stale/empty
+      # raw_tomorrow until restarted. If tomorrow's prices are still
+      # missing after publication, reload the config entry — the same
+      # fresh fetch a container rebuild forces. Second trigger at 14:30
+      # covers late publications (Nordpool can delay to ~14:00).
+      automation = [
+        {
+          alias = "Reload Nordpool for tomorrow prices";
+          id = "nordpool_reload_tomorrow";
+          triggers = [
+            { trigger = "time"; at = "13:30:00"; }
+            { trigger = "time"; at = "14:30:00"; }
+          ];
+          conditions = [
+            {
+              condition = "template";
+              value_template = "{{ state_attr('sensor.nordpool_kwh_dk1_dkk_3_10_0', 'raw_tomorrow') in (none, []) }}";
+            }
+          ];
+          actions = [
+            {
+              action = "homeassistant.reload_config_entry";
+              target.entity_id = "sensor.nordpool_kwh_dk1_dkk_3_10_0";
+            }
+          ];
+        }
+      ];
+
       lovelace.dashboards.nixos-lovelace = {
         mode = "yaml";
         filename = "ui-lovelace.yaml";
