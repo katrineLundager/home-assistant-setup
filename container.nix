@@ -13,6 +13,14 @@
 
   networking.firewall.allowedTCPPorts = [ 8123 ];
 
+  # Without this the container generates an empty /etc/resolv.conf (no
+  # nameserver lines), so every DNS lookup inside it fails — e.g. the
+  # nordpool integration dies with ClientConnectorDNSError at boot and
+  # its sensor stays "unavailable" until a restart. The container shares
+  # the host network stack, but resolv.conf generation is per-container.
+  # Same router DNS as the host, with a public resolver as fallback.
+  networking.nameservers = [ "192.168.1.1" "9.9.9.9" ];
+
   time.timeZone = "Europe/Copenhagen";
 
   # ── Home Assistant ──────────────────────────────────────────────
