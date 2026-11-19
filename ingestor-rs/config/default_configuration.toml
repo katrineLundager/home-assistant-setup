@@ -1,6 +1,7 @@
-
+flush_interval = 5
+batch_size = 500
 include_attributes = true
-exclude_entities = ["",1]
+exclude_entities = ["sensor.sun","home.user"]
 [ha]
 ws_url = "ws://supervisor/core/websocket"
 supervisor_token = ""
@@ -11,6 +12,7 @@ user = "default"
 database = "homeassistant"
 table = "states"
 host = "localhost"
+password = ""
 
 
 
