@@ -293,7 +293,7 @@ mod test {
         assert_eq!(config.flush_interval.0, 5);
         // TOML defaults survive when env is silent (ingestor.py:40-56)
         assert_eq!(config.clickhouse.host, "ch");
-        assert_eq!(config.clickhouse.port.0, 8123);
+        assert_eq!(config.clickhouse.port.0, 8124);
         assert_eq!(config.clickhouse.user, "default");
         assert_eq!(config.clickhouse.database, "homeassistant");
         assert_eq!(config.clickhouse.table, "states");
@@ -451,6 +451,6 @@ mod test {
         .expect("config builder shouldn't fail.");
         let config = Configuration::from_source(mock).expect("accepts throttle map from env string");
 
-        assert_eq!(config.clickhouse_url(),"localhost:8123");
+        assert_eq!(config.clickhouse_url(),"http://localhost:8124");
     }
 }
