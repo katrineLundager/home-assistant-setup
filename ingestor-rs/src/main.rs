@@ -1,10 +1,19 @@
 mod config;
+mod clickhouse;
 
 use crate::config::Configuration;
+use crate::clickhouse::ClickhouseClient;
 
-fn main() {
-    // Step 1: load config and print it. Errors for now: just panic with a
-    // message. Later steps replace this with proper error handling.
+#[tokio::main]
+async fn main() {
+
+
     let config = Configuration::from_env().unwrap();
-    println!("{config:#?}");
+
+    let client = ClickhouseClient::new(&config);
+    match client.ensure_schema(&config).await {
+        Ok(s) => println!("{}",s),
+        Err(err) => println!("Something went wrong: {:?}", err),
+    }
+
 }

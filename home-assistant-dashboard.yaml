@@ -526,7 +526,7 @@ views:
             series:
               - entity: sensor.clickhouse_car_energy
                 extend_to: false
-                name: Motorcycle energy
+                name: Car energy
                 data_generator: |
                   const hours = entity.attributes.hour || [];
                   const vals = entity.attributes.energy || [];

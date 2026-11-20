@@ -9,7 +9,7 @@ ws_url = "ws://supervisor/core/websocket"
 supervisor_token = ""
 
 [clickhouse]
-port = 8123
+port = 8124
 user = "default"
 database = "homeassistant"
 table = "states"

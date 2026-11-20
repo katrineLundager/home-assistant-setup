@@ -48,20 +48,43 @@ struct Clickhouse {
 }
 
 impl Configuration {
+    /// The production entry point: injects the real process environment.
     pub fn from_env() -> Result<Configuration, ConfigError> {
-        let config_file = config::Config::builder()
+        Self::from_source(
+            config::Environment::default()
+                .separator("__")
+                .try_parsing(true),
+        )
+    }
+
+    /// The seam: any config::Source can stand in for the environment.
+    /// from_env injects real env vars; tests inject in-memory values.
+    fn from_source(
+        extra: impl config::Source + Send + Sync + 'static,
+    ) -> Result<Configuration, ConfigError> {
+        config::Config::builder()
             .add_source(config::File::with_name(
                 &config_path("default_configuration.toml").to_string_lossy(),
             ))
-            .add_source(
-                config::Environment::default()
-                    .separator("__")
-                    .try_parsing(true),
-            )
-            .build()?;
+            .add_source(extra)
+            .build()?
+            .try_deserialize()
+    }
 
-        let configs: Configuration = config_file.try_deserialize()?;
-        Ok(configs)
+    pub fn clickhouse_url(&self) -> String {
+        format!("http://{}:{:?}", self.clickhouse.host, self.clickhouse.port.0)
+    }
+    pub fn clickhouse_user(&self) -> String {
+        self.clickhouse.user.clone()
+    }
+    pub fn clickhouse_password(&self) -> SecretString {
+        self.clickhouse.password.clone()
+    }
+    pub fn clickhouse_database(&self) -> String {
+        self.clickhouse.database.clone()
+    }
+    pub fn clickhouse_table(&self) -> String {
+        self.clickhouse.table.clone()
     }
 }
 
@@ -257,7 +280,14 @@ mod test {
     fn env_loading_matches_ingestor_py() {
         // ── 1. Python defaults: BATCH_SIZE=500, FLUSH_INTERVAL=5 (ingestor.py:71-72)
         set_env(&[("CLICKHOUSE__HOST", "ch"), ("HA__SUPERVISOR_TOKEN", "tok")]);
-        let config = Configuration::from_env()
+        let mock = config::Config::try_from(&serde_json::json!({
+            "ha": { "supervisor_token": "tok" },
+            "clickhouse": {
+                "host": "ch",
+            },
+        }))
+        .expect("mock source builds");
+        let config = Configuration::from_source(mock)
             .expect("batch_size and flush_interval should have defaults (Python: 500 and 5)");
         assert_eq!(config.batch_size.0, 500);
         assert_eq!(config.flush_interval.0, 5);
@@ -275,53 +305,101 @@ mod test {
         // TOML inline table supplies the throttle map directly.
         assert_eq!(config.throttle_entities.get("sensor.sun"), Some(&1.1));
         assert_eq!(config.throttle_entities.len(), 1);
+    }
 
+    #[test]
+    fn test_password_leakage() {
         // ── 2. Overrides + secret redaction: the Debug render must never
         // leak the password (SecretString's whole reason to exist).
-        set_env(&[
-            ("CLICKHOUSE__HOST", "ch"),
-            ("HA__SUPERVISOR_TOKEN", "tok"),
-            ("CLICKHOUSE__PASSWORD", "top-secret-value"),
-            ("CLICKHOUSE__DATABASE", "mydb"),
-        ]);
-        let config = Configuration::from_env().expect("valid override env");
+        //
+        // Hermetic version: no process env. The in-memory source carries
+        // the same values EXCLUDE_ENV etc. would, but typed (json! gives
+        // real numbers/bools, so no try_parsing involved) and nested
+        // (clickhouse.host — the shape the Environment separator produces).
+        let mock = config::Config::try_from(&serde_json::json!({
+            "ha": { "supervisor_token": "tok" },
+            "clickhouse": {
+                "host": "ch",
+                "password": "top-secret-value",
+                "database": "mydb",
+            },
+        }))
+        .expect("mock source builds");
+
+        let config = Configuration::from_source(mock).expect("valid override env");
         assert_eq!(config.clickhouse.database, "mydb");
         let rendered = format!("{config:#?}");
         assert!(
             !rendered.contains("top-secret-value"),
             "password leaked in Debug output"
         );
+    }
 
+    #[test]
+    fn test_batch_size_zero() {
         // ── 3. BATCH_SIZE=0 must not load (ingestor.py clamps via max(1, ...))
-        set_env(&[
+        /*set_env(&[
             ("CLICKHOUSE__HOST", "ch"),
             ("HA__SUPERVISOR_TOKEN", "tok"),
             ("BATCH_SIZE", "0"),
         ]);
+        */
+        let mock = config::Config::try_from(&serde_json::json!({
+            "ha": { "supervisor_token": "tok" },
+            "batch_size": "0",
+            "clickhouse": {
+                "host": "ch",
+            },
+        }))
+        .expect("mock source builds");
+
         assert!(
-            Configuration::from_env().is_err(),
+            Configuration::from_source(mock).is_err(),
             "BATCH_SIZE=0 must be rejected (Python: clamped to 1)"
         );
+    }
 
+    #[test]
+    fn test_flush_interval_zero() {
         // ── 4. FLUSH_INTERVAL=0 must not load as 0 (Python clamps to 1)
-        set_env(&[
+        /*set_env(&[
             ("CLICKHOUSE__HOST", "ch"),
             ("HA__SUPERVISOR_TOKEN", "tok"),
             ("FLUSH_INTERVAL", "0"),
-        ]);
+        ]);*/
+        let mock = config::Config::try_from(&serde_json::json!({
+            "ha": { "supervisor_token": "tok" },
+            "flush_interval": "0",
+            "clickhouse": {
+                "host": "ch",
+            },
+        }))
+        .expect("mock source builds");
         assert!(
-            Configuration::from_env().is_err(),
+            Configuration::from_source(mock).is_err(),
             "FLUSH_INTERVAL=0 must be rejected or clamped to >= 1, not accepted as 0"
         );
+    }
 
+    #[test]
+    fn test_exclude_entities() {
         // ── 5. EXCLUDE_ENTITIES: comma-separated, trimmed, empty entries
         // dropped (ingestor.py:74-76)
-        set_env(&[
+        /*set_env(&[
             ("CLICKHOUSE__HOST", "ch"),
             ("HA__SUPERVISOR_TOKEN", "tok"),
             ("EXCLUDE_ENTITIES", " sensor.sun ,, zone.home ,"),
         ]);
-        let config = Configuration::from_env().expect("accepts exclude list from env");
+        */
+        let mock = config::Config::try_from(&serde_json::json!({
+            "ha": { "supervisor_token": "tok" },
+            "exclude_entities": " sensor.sun ,, zone.home ,",
+            "clickhouse": {
+                "host": "ch",
+            },
+        }))
+        .expect("mock source builds");
+        let config = Configuration::from_source(mock).expect("accepts exclude list from env");
         assert!(config.exclude_entities.contains("sensor.sun"));
         assert!(config.exclude_entities.contains("zone.home"));
         assert!(
@@ -329,18 +407,30 @@ mod test {
             "empty entries must be dropped"
         );
         assert_eq!(config.exclude_entities.len(), 2);
+    }
 
+    #[test]
+    fn test_throttle_entities() {
         // ── 6. THROTTLE_ENTITIES: "entity=seconds;..." with garbage entries
         // silently skipped (ingestor.py:60-69, Python's `except ValueError: pass`)
-        set_env(&[
+        /*set_env(&[
             ("CLICKHOUSE__HOST", "ch"),
             ("HA__SUPERVISOR_TOKEN", "tok"),
             (
                 "THROTTLE_ENTITIES",
                 " sensor.nordpool=3600 ; junk ; sensor.y=abc ;",
             ),
-        ]);
-        let config = Configuration::from_env().expect("accepts throttle map from env string");
+        ]);*/
+        let mock = config::Config::try_from(&serde_json::json!({
+            "ha": { "supervisor_token": "tok" },
+            "throttle_entities": " sensor.nordpool=3600 ; junk ; sensor.y=abc ;",
+            "clickhouse": {
+                "host": "ch",
+            },
+        }))
+        .expect("mock source builds");
+        let config =
+            Configuration::from_source(mock).expect("accepts throttle map from env string");
         assert_eq!(
             config.throttle_entities.get("sensor.nordpool"),
             Some(&3600.0)
@@ -350,10 +440,17 @@ mod test {
             1,
             "'junk' (no '=') and 'sensor.y=abc' (unparseable) must be skipped"
         );
+    }
 
-        // Leave the process clean for any other tests.
-        for var in ALL_ENV_VARS {
-            std::env::remove_var(var);
-        }
+    #[test]
+    fn test_clickhouse_url() {
+        set_env(&[("HA__SUPERVISOR_TOKEN", "tok")]);
+        let mock = config::Config::try_from(&serde_json::json!({
+            "ha": {"supervisor_token": "tok"},
+        }))
+        .expect("config builder shouldn't fail.");
+        let config = Configuration::from_source(mock).expect("accepts throttle map from env string");
+
+        assert_eq!(config.clickhouse_url(),"localhost:8123");
     }
 }
