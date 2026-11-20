@@ -72,7 +72,10 @@ impl Configuration {
     }
 
     pub fn clickhouse_url(&self) -> String {
-        format!("http://{}:{:?}", self.clickhouse.host, self.clickhouse.port.0)
+        format!(
+            "http://{}:{:?}",
+            self.clickhouse.host, self.clickhouse.port.0
+        )
     }
     pub fn clickhouse_user(&self) -> String {
         self.clickhouse.user.clone()
@@ -449,8 +452,9 @@ mod test {
             "ha": {"supervisor_token": "tok"},
         }))
         .expect("config builder shouldn't fail.");
-        let config = Configuration::from_source(mock).expect("accepts throttle map from env string");
+        let config =
+            Configuration::from_source(mock).expect("accepts throttle map from env string");
 
-        assert_eq!(config.clickhouse_url(),"http://localhost:8124");
+        assert_eq!(config.clickhouse_url(), "http://localhost:8124");
     }
 }

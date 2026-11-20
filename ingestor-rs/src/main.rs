@@ -11,8 +11,8 @@ async fn main() {
     let config = Configuration::from_env().unwrap();
 
     let client = ClickhouseClient::new(&config);
-    match client.ensure_schema(&config).await {
-        Ok(s) => println!("{}",s),
+    match client.ensure_schema().await {
+        Ok(()) => println!("schema is ready",),
         Err(err) => println!("Something went wrong: {:?}", err),
     }
 
