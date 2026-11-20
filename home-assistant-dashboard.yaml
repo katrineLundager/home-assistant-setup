@@ -698,6 +698,12 @@ views:
               unit: kWh
               needle: true
               name: PV today
+              min: 0
+              max: 25
+              severity:
+                green: 15
+                yellow: 7
+                red: 0
               grid_options:
                 columns: full
                 rows: auto

@@ -185,7 +185,7 @@
             command = ''
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT sum(w * dt) / 3600000 AS consumption FROM (SELECT state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= toStartOfDay(now()))"
             '';
-            value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            value_template = "{{ value_json.consumption | default([]) | last | default(0) | round(2) }}";
             unit_of_measurement = "kWh";
             scan_interval = 5;
           };
