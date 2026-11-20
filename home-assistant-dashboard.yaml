@@ -15,8 +15,6 @@ views:
       - type: grid
         column_span: 2
         cards:
-
-
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -31,16 +29,23 @@ views:
               colorize_states: true
             graph_span: 48h
             span:
-              start: day 
+              start: day
             now:
               show: true
               label: Now
             yaxis:
               - id: price
                 min: 0
+                apex_config:
+                  title:
+                    show: true
+                    text: Price /DKK
               - id: consumption
-                min: 0
                 opposite: true
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
             hours_12: false
             series:
               - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
@@ -52,43 +57,36 @@ views:
                   const rawTomorrow = entity.attributes.raw_tomorrow || [];
                   const historical = rawToday
                   .map(item => [new Date(item.start).getTime(), item.value]);
-
+    
                   return [...historical];
-
-
               - entity: sensor.nordpool_kwh_dk1_dkk_3_10_0
                 extend_to: false
                 yaxis_id: price
                 name: Tomorrows prices
                 data_generator: |
                   const rawTomorrow = entity.attributes.raw_tomorrow || [];
-
+    
                   const forecast = rawTomorrow
                     .slice(0, 200)
                     .map(item => [new Date(item.start).getTime(), item.value]);
-
+    
                   return [...forecast]
-
               - entity: sensor.clickhouse_hourly_consumption_from_nrgi
                 extend_to: false
                 yaxis_id: consumption
                 type: column
                 name: Hourly consumption data (kWh)
                 data_generator: |
-                    const hours = entity.attributes.hour || [];
-                    const vals = entity.attributes.consumption || [];
-                    const forecast = hours.map((h, i) => [
-                      new Date(h).getTime(),
-                      Number(vals[i])
-                    ])
-                    return [...forecast]
-
-
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.consumption || [];
+                  const forecast = hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
+                  return [...forecast]
       - type: grid
         column_span: 2
         cards:
- 
-
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -109,10 +107,21 @@ views:
               show: true
               label: Now
             hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 5d
+            yaxis:
+              - id: consumption
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
             series:
               - entity: sensor.clickhouse_nordpool_history
                 extend_to: false
                 name: Historic prices
+                yaxis_id: consumption
                 data_generator: |
                   const hours = entity.attributes.hour || [];
                   const vals = entity.attributes.price || [];
@@ -121,14 +130,11 @@ views:
                     Number(vals[i])
                   ]);
                   return [...historical];
-
-
-
+                show:
+                  in_brush: true
       - type: grid
         column_span: 4
         cards:
- 
-
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -138,16 +144,28 @@ views:
                 height: 350px
             header:
               show: true
-              title: Electricity consumption 
+              title: Electricity consumption
               show_states: true
               colorize_states: true
-            graph_span: 1h
+            graph_span: 5d
+            experimental:
+              brush: true
+            brush:
+              selection_span: 5h
             hours_12: false
+            yaxis:
+              - id: consumption
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
             series:
               - entity: sensor.smart_meter_ts_65a_3_real_power
                 extend_to: false
                 name: Hourly consumption data
-
+                yaxis_id: consumption
+                show:
+                  in_brush: true
  
 
 #############################################################################
@@ -182,16 +200,27 @@ views:
               title: Car consumption
               show_states: true
               colorize_states: true
-            graph_span: 48h
+            graph_span: 2week
             span:
               start: hour
-              offset: -48h
+              offset: -2week
             hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 5h
+            yaxis:
+              - id: consumption
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
             series:
               - entity: sensor.clickhouse_car_consumption
                 extend_to: false
                 name: Car consumption
                 type: column
+                yaxis_id: consumption
                 data_generator: |
                   const minutes = entity.attributes.minute || [];
                   const vals = entity.attributes.consumption || [];
@@ -199,6 +228,8 @@ views:
                     new Date(h).getTime(),
                     Number(vals[i])
                   ])
+                show:
+                  in_brush: true
 
 
       - type: grid
@@ -221,11 +252,22 @@ views:
               start: hour
               offset: -48h
             hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 5h
+            yaxis:
+              - id: consumption
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
             series:
               - entity: sensor.clickhouse_motorcycle_consumption
                 extend_to: false
                 type: column
                 name: Motorcycle consumption
+                yaxis_id: consumption
                 data_generator: |
                   const minutes = entity.attributes.minute || [];
                   const vals = entity.attributes.consumption || [];
@@ -233,6 +275,8 @@ views:
                     new Date(h).getTime(),
                     Number(vals[i])
                   ])
+                show: 
+                  in_brush: true
 
 
 
@@ -250,15 +294,28 @@ views:
               title: Electricity consumption 
               show_states: true
               colorize_states: true
-            graph_span: 1h
+            graph_span: 1d
             now:
               show: true
               label: Now
             hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 1h
+            yaxis:
+              - id: consumption
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
             series:
               - entity: sensor.smart_meter_ts_65a_3_real_power
                 extend_to: false
                 name: Hourly consumption data
+                yaxis_id: consumption
+                show:
+                  in_brush: true
 
 
 
@@ -546,10 +603,21 @@ views:
               show: true
               title: Consumption (NRGI, hourly)
             graph_span: 14d
+            experimental:
+              brush: true
+            brush:
+              selection_span: 24h
+            yaxis:
+              - id: consumption
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
             series:
               - entity: sensor.clickhouse_hourly_consumption_from_nrgi
                 name: Consumption (kWh)
                 type: column
+                yaxis_id: consumption
                 data_generator: |
                   const hours = entity.attributes.hour || [];
                   const vals = entity.attributes.consumption || [];
@@ -557,6 +625,11 @@ views:
                     new Date(h).getTime(),
                     Number(vals[i])
                   ]);
+                show:
+                  in_brush: true
+
+
+
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -568,9 +641,21 @@ views:
             apex_config:
               chart:
                 height: 350px
+            experimental:
+              brush: true
+            brush:
+              selection_span: 24h
             yaxis:
               - id: primary
+                apex_config:
+                  title:
+                    show: true
+                    text: Light intensity /lux 
               - id: secondary
+                apex_config:
+                  title:
+                    show: true
+                    text: Elevation (°)
                 min: 0
                 opposite: true
             series:
@@ -584,6 +669,8 @@ views:
                     new Date(h).getTime(),
                     Number(vals[i])
                   ]);
+                show:
+                  in_brush: true
               - entity: sensor.clickhouse_sun_elevation
                 name: Elevation (°)
                 yaxis_id: secondary
@@ -594,6 +681,9 @@ views:
                     new Date(h).getTime(),
                     Number(vals[i])
                   ]);
+
+
+
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -605,12 +695,21 @@ views:
               show: true
               title: Temperature (0xfd01)
             graph_span: 14d
+            experimental:
+              brush: true
+            brush:
+              selection_span: 24h
             yaxis:
             - id: Temperature
               max: 40
+              apex_config:
+                title:
+                  show: true
+                  text: Temperature /°C
             series:
               - entity: sensor.clickhouse_temperature_0xfd01
                 name: Temperature (°C)
+                yaxis_id: Temperature
                 data_generator: |
                   const hours = entity.attributes.hour || [];
                   const vals = entity.attributes.temperature || [];
@@ -618,7 +717,45 @@ views:
                     new Date(h).getTime(),
                     Number(vals[i])
                   ])
+                show:
+                  in_brush: true
 
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: auto
+            apex_config:
+              chart:
+                height: 350px
+            header:
+              show: true
+              title: Rain (0xfd01)
+            graph_span: 14d
+            experimental:
+              brush: true
+            brush:
+              selection_span: 24h
+            yaxis:
+              - id: rain
+                apex_config:
+                  title:
+                    show: true
+                    text: Rain /mm
+            series:
+              - entity: sensor.clickhouse_rain_0xfd01
+                name: Rain /mm 
+                yaxis_id: rain
+                type: column
+                data_generator: |
+                  const hours = entity.attributes.hour || [];
+                  const vals = entity.attributes.rain || [];
+                  return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i]/100)
+                  ])
+                show:
+                  in_brush: true
 
 
 #############################################################################
@@ -640,21 +777,33 @@ views:
       cards:
         - type: custom:apexcharts-card
           grid_options:
-            columns: 18
+            columns: 19
             rows: auto
           apex_config:
             chart:
-              height: 350px
+              height: 440px
           header:
             show: true
             title: PV Energy Generation
-          graph_span: 1d
+          graph_span: 2d
+          experimental:
+            brush: true
+          brush:
+            selection_span: 24h
           yaxis:
             - id: PV
               min: 0
+              apex_config:
+                title:
+                  show: true
+                  text: Generated power /kWh
             - id: lux
               min: 0
               opposite: true
+              apex_config:
+                title:
+                  show: true
+                  text: Light intensity /lux
           series:
             - entity: sensor.clickhouse_hourly_generation_from_solarnet
               yaxis_id: PV
@@ -667,6 +816,8 @@ views:
                   new Date(h).getTime(),
                   Number(vals[i])
                 ]);
+              show:
+                in_brush: true
             - entity: sensor.clickhouse_lux_0xfd01
               name: Lux
               yaxis_id: lux
@@ -678,39 +829,71 @@ views:
                   Number(vals[i])
                 ]);
 
-                     
+                         
         - type: vertical-stack
           cards:
-            - type: gauge
-              entity: sensor.reserva_state_of_charge
-              name: Battery
-              unit: "%"
-              needle: false
-              severity:
-                green: 7
-                yellow: 0
-                red: 0
-              grid_options:
-                columns: full
-                rows: auto
-            - type: gauge
-              entity: sensor.clickhouse_daily_generation_from_solarnet
-              unit: kWh
-              needle: true
-              name: PV today
-              min: 0
-              max: 25
-              severity:
-                green: 15
-                yellow: 7
-                red: 0
-              grid_options:
-                columns: full
-                rows: auto
+            - type: vertical-stack
+              cards:
+                - type: gauge
+                  entity: sensor.reserva_state_of_charge
+                  name: Battery
+                  unit: "%"
+                  needle: false
+                  severity:
+                    green: 7
+                    yellow: 0
+                    red: 0
+                  grid_options:
+                    columns: full
+                    rows: auto
+                - type: gauge
+                  entity: sensor.clickhouse_daily_generation_from_solarnet
+                  unit: kWh
+                  needle: true
+                  name: PV today
+                  min: 0
+                  max: 100
+                  severity:
+                    green: 30
+                    yellow: 20
+                    red: 0
+                  grid_options:
+                    columns: full
+                    rows: auto
+                - type: gauge
+                  entity: sensor.solarnet_power_photovoltaics
+                  unit: W
+                  needle: true
+                  name: PV now
+                  min: 0
+                  max: 14000
+                  severity:
+                    green: 4000
+                    yellow: 1500
+                    red: 0
+                  grid_options:
+                    columns: full
+                    rows: auto
+                - type: gauge
+                  entity: sensor.clickhouse_daily_consumption_from_nrgi
+                  unit: kWh
+                  needle: true
+                  name: Todays usage
+                  min: 0
+                  max: 100
+                  severity:
+                    green: 0
+                    yellow: 20
+                    red: 30
+                  grid_options:
+                    columns: full
+                    rows: auto
           grid_options:
-            columns: 6
+            columns: 5
             rows: auto
-
+      grid_options:
+        columns: 5
+        rows: auto
 
     - type: grid
       column_span: 2
@@ -728,37 +911,44 @@ views:
           header:
             show: true
             title: Power flow (W)
-          # Brush mode: bottom strip shows 7 days (graph_span), the
-          # main chart shows the selected window (selection_span).
-          # Drag/resize the selection in the strip to change the x-range.
+          graph_span: 48h
           experimental:
             brush: true
-          graph_span: 48h
           brush:
             selection_span: 8h
           hours_12: false
+          yaxis:
+            - id: pwr
+              min: 0
+              apex_config:
+                title:
+                  show: true
+                  text: Power /W
           series:
             - entity: sensor.solarnet_power_photovoltaics
               name: Photovoltaics
-              type: line 
+              type: line
+              yaxis_id: pwr
             - entity: sensor.solarnet_power_load_consumed
               name: Load consumed
               type: line
+              yaxis_id: pwr
             - entity: sensor.solarnet_power_grid_import
               name: Grid import
               type: line
+              yaxis_id: pwr
             - entity: sensor.solarnet_power_grid_export
               name: Grid export
               type: line
+              yaxis_id: pwr
             - entity: sensor.solarnet_power_battery_charge
               name: Battery charge
               type: line
+              yaxis_id: pwr
             - entity: sensor.solarnet_power_battery_discharge
               name: Battery discharge
               type: line
-            # Brush-only copy of load consumption: renders the overview
-            # strip. Column series are kept out of the brush to avoid
-            # the known brush/column glitch.
+              yaxis_id: pwr
             - entity: sensor.solarnet_power_load_consumed
               name: Load consumed
               type: area
@@ -786,19 +976,32 @@ views:
               position: bottom
           header:
             show: true
-            title: Battery (reserva)
-          graph_span: 4h
+            title: Battery Power flow
+          graph_span: 1week
           hours_12: false
+          experimental:
+            brush: true
+          brush:
+            selection_span: 24h
           yaxis:
             - id: dc
               min: 0
+              max: 10000
+              apex_config:
+                title:
+                  show: true
+                  text: Power /W
           series:
             - entity: sensor.solarnet_power_battery_charge
               name: Battery charge (W)
               yaxis_id: dc
+              show:
+                in_brush: true
             - entity: sensor.solarnet_power_battery_discharge
               name: Battery discharge (W)
               yaxis_id: dc
+              show:
+                in_brush: true
 
     - type: grid
       column_span: 2
@@ -818,13 +1021,25 @@ views:
             title: Autonomy and self-consumption (%)
           graph_span: 24h
           hours_12: false
+          experimental:
+            brush: true
+          brush:
+            selection_span: 24h
           yaxis:
             - min: 0
               max: 100
+              apex_config:
+                title:
+                  show: true
+                  text: Autonomy and self-consumption /%
           series:
             - entity: sensor.solarnet_relative_autonomy
               name: Autonomy
+              show:
+                in_brush: true
             - entity: sensor.solarnet_relative_self_consumption
               name: Self-consumption
+              show:
+                in_brush: true
 
 

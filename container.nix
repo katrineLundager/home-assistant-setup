@@ -114,7 +114,7 @@
             command = ''
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT month, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' GROUP BY month UNION ALL SELECT month, sum(w * dt) / 3600000 AS consumption FROM (SELECT month, w, dt FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfMonth(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL)) GROUP BY month) GROUP BY month ORDER BY month"
             '';
-            value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            value_template = "{{ value_json.consumption | default([]) | last | default(0) || round(2) }}";
             unit_of_measurement = "kWh";
             json_attributes = [
               "month"
