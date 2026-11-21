@@ -656,7 +656,7 @@ views:
 
               - entity: sensor.clickhouse_daily_car_energy
                 extend_to: false
-                name: Motorcycle energy
+                name: Car energy
                 type: column
                 data_generator: |
                   const days = entity.attributes.day || [];
