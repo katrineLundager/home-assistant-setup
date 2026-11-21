@@ -630,7 +630,7 @@ views:
                   in_brush: true
               - entity: sensor.clickhouse_daily_consumption_from_house
                 extend_to: false
-                name: Net consumption
+                name: House consumption
                 type: column
                 data_generator: |
                   const days = entity.attributes.day || [];
@@ -642,7 +642,7 @@ views:
 
               - entity: sensor.clickhouse_daily_generation_from_solarnet
                 extend_to: false
-                name: Net consumption
+                name: Solar generation
                 type: column
                 data_generator: |
                   const days = entity.attributes.day || [];
@@ -655,7 +655,7 @@ views:
 
               - entity: sensor.clickhouse_daily_motorcycle_energy
                 extend_to: false
-                name: Motorcycle energy
+                name: Motorcycle consumption 
                 type: column
                 data_generator: |
                   const days = entity.attributes.day || [];
@@ -667,7 +667,7 @@ views:
 
               - entity: sensor.clickhouse_daily_car_energy
                 extend_to: false
-                name: Car energy
+                name: Car consumption
                 type: column
                 data_generator: |
                   const days = entity.attributes.day || [];
