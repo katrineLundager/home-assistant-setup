@@ -354,7 +354,7 @@ views:
           span:
             start: year
           yaxis:
-              apex_config:
+            - apex_config:
                 title:
                   show: true
                   text: Accumulated Consumption /kWh
@@ -466,7 +466,7 @@ views:
         span:
           start: year
         yaxis:
-            apex_config:
+          - apex_config:
               title:
                 show: true
                 text: Monthly Consumption /kWh
@@ -538,10 +538,10 @@ views:
             brush:
               selection_span: 7d
             yaxis:
-              apex_config:
-                title:
-                  show: true
-                  text: Daily Consumption /kWh
+              - apex_config:
+                  title:
+                    show: true
+                    text: Daily Consumption /kWh
             series:
               - entity: sensor.clickhouse_daily_consumption_from_nrgi
                 extend_to: false
@@ -642,10 +642,10 @@ views:
             brush:
               selection_span: 1d
             yaxis:
-              apex_config:
-                title:
-                  show: true
-                  text: Accumulated Hourly Consumption /kWh
+              - apex_config:
+                  title:
+                    show: true
+                    text: Accumulated Hourly Consumption /kWh
             series:
               - entity: sensor.clickhouse_car_energy
                 extend_to: false
@@ -690,10 +690,10 @@ views:
             brush:
               selection_span: 1d
             yaxis:
-              apex_config:
-                title:
-                  show: true
-                  text: Accumulated Hourly Consumption /kWh
+              - apex_config:
+                  title:
+                    show: true
+                    text: Accumulated Hourly Consumption /kWh
             series:
               - entity: sensor.clickhouse_motorcycle_energy
                 extend_to: false
