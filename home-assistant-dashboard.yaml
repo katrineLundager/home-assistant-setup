@@ -585,13 +585,10 @@ views:
                   in_brush: true
 
 
-
     - type: grid
       column_span: 2
       cards:
-        - type: grid
-          column_span: 2
-          cards:
+
 
           - type: custom:apexcharts-card
             grid_options:
@@ -608,11 +605,15 @@ views:
             graph_span: 365d
             span:
               start: day
-              offset: -14d
+              offset: -365d
             now:
               show: true
               label: Now
             hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 7d
             series:
               - entity: sensor.clickhouse_daily_consumption_from_nrgi
                 extend_to: false
@@ -940,7 +941,7 @@ views:
                     columns: full
                     rows: auto
                 - type: gauge
-                  entity: sensor.clickhouse_daily_generation_from_solarnet
+                  entity: sensor.clickhouse_todays_generation_from_solarnet
                   unit: kWh
                   needle: true
                   name: PV today

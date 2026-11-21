@@ -155,6 +155,31 @@
             # leadInFrame needs the explicit frame ending at 1 FOLLOWING —
             # with the default frame it returns the DateTime zero value
             # instead of NULL; greatest(..., 0) neutralizes it.
+            name = "ClickHouse Daily Generation From SolarNet";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfDay(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY) GROUP BY hour) GROUP BY day ORDER BY day"
+            '';
+            value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            unit_of_measurement = "kWh";
+
+            json_attributes = [
+              "day"
+              "consumption"
+            ];
+            scan_interval = 60;
+          };
+        }
+        {
+          sensor = {
+            # -> sensor.clickhouse_hourly_generation_from_solarnet
+            # Hourly photovoltaic energy from solarnet_power_photovoltaics,
+            # an instantaneous power (W) sampled event-driven. Energy is the
+            # same time-weighted staircase integral as the smart-meter half
+            # of the hourly consumption query: each sample's watts times the
+            # seconds until the next sample, summed per hour / 3.6e6 (kWh).
+            # leadInFrame needs the explicit frame ending at 1 FOLLOWING —
+            # with the default frame it returns the DateTime zero value
+            # instead of NULL; greatest(..., 0) neutralizes it.
             name = "ClickHouse Hourly Generation From SolarNet";
             command = ''
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) GROUP BY hour) GROUP BY hour ORDER BY hour"
@@ -181,7 +206,7 @@
             # always returns arrays, so the state must be taken with | last —
             # otherwise the state renders as "[13.6]" (non-numeric), which HA
             # rejects and the sensor is stuck in unknown.
-            name = "ClickHouse Daily Generation From SolarNet";
+            name = "ClickHouse Todays Generation From SolarNet";
             command = ''
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT sum(w * dt) / 3600000 AS consumption FROM (SELECT state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= toStartOfDay(now()))"
             '';
@@ -284,7 +309,7 @@
             # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Daily Car Energy";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -324,7 +349,7 @@
             # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Daily Motorcycle Energy";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
