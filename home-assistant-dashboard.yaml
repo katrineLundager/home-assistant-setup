@@ -353,6 +353,11 @@ views:
           graph_span: 1yr
           span:
             start: year
+          yaxis:
+              apex_config:
+                title:
+                  show: true
+                  text: Accumulated Consumption /kWh
           series:
             - entity: sensor.clickhouse_monthly_consumption_from_nrgi
               name: This year
@@ -460,6 +465,11 @@ views:
         graph_span: 1yr
         span:
           start: year
+        yaxis:
+            apex_config:
+              title:
+                show: true
+                text: Monthly Consumption /kWh
         series:
           - entity: sensor.clickhouse_monthly_consumption_from_nrgi
             name: 2 years ago
@@ -527,11 +537,17 @@ views:
               brush: true
             brush:
               selection_span: 7d
+            yaxis:
+              apex_config:
+                title:
+                  show: true
+                  text: Daily Consumption /kWh
             series:
               - entity: sensor.clickhouse_daily_consumption_from_nrgi
                 extend_to: false
                 name: Net consumption
                 type: column
+                color: "#fa4042"
                 data_generator: |
                   const days = entity.attributes.day || [];
                   const vals = entity.attributes.consumption  || [];
@@ -545,6 +561,7 @@ views:
                 extend_to: false
                 name: House consumption
                 type: column
+                color: "#039be5"
                 data_generator: |
                   const days = entity.attributes.day || [];
                   const vals = entity.attributes.consumption  || [];
@@ -557,6 +574,7 @@ views:
                 extend_to: false
                 name: Solar generation
                 type: column
+                color: orange 
                 data_generator: |
                   const days = entity.attributes.day || [];
                   const vals = entity.attributes.consumption  || [];
@@ -570,6 +588,7 @@ views:
                 extend_to: false
                 name: Motorcycle consumption 
                 type: column
+                color: purple
                 data_generator: |
                   const days = entity.attributes.day || [];
                   const vals = entity.attributes.energy || [];
@@ -582,6 +601,7 @@ views:
                 extend_to: false
                 name: Car consumption
                 type: column
+                color: gray
                 data_generator: |
                   const days = entity.attributes.day || [];
                   const vals = entity.attributes.energy || [];
@@ -621,6 +641,11 @@ views:
               brush: true
             brush:
               selection_span: 1d
+            yaxis:
+              apex_config:
+                title:
+                  show: true
+                  text: Accumulated Hourly Consumption /kWh
             series:
               - entity: sensor.clickhouse_car_energy
                 extend_to: false
@@ -664,6 +689,11 @@ views:
               brush: true
             brush:
               selection_span: 1d
+            yaxis:
+              apex_config:
+                title:
+                  show: true
+                  text: Accumulated Hourly Consumption /kWh
             series:
               - entity: sensor.clickhouse_motorcycle_energy
                 extend_to: false
