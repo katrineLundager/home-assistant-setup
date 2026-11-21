@@ -628,6 +628,17 @@ views:
                   ])
                 show:
                   in_brush: true
+              - entity: sensor.clickhouse_daily_consumption_from_house
+                extend_to: false
+                name: Net consumption
+                type: column
+                data_generator: |
+                  const days = entity.attributes.day || [];
+                  const vals = entity.attributes.consumption  || [];
+                  return days.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
 
               - entity: sensor.clickhouse_daily_generation_from_solarnet
                 extend_to: false

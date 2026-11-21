@@ -157,7 +157,7 @@
             # instead of NULL; greatest(..., 0) neutralizes it.
             name = "ClickHouse Daily Consuption From House";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfDay(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_load_consumed' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY) GROUP BY day) GROUP BY day ORDER BY day"
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT day, sum(consumption) AS consumption FROM (SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfDay(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_load_consumed' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY) GROUP BY day) GROUP BY day ORDER BY day"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
