@@ -13,7 +13,7 @@ views:
     max_columns: 4
     sections:
       - type: grid
-        column_span: 2
+        column_span: 4
         cards:
           - type: custom:apexcharts-card
             grid_options:
@@ -85,7 +85,7 @@ views:
                   ])
                   return [...forecast]
       - type: grid
-        column_span: 2
+        column_span: 4
         cards:
           - type: custom:apexcharts-card
             grid_options:
@@ -186,8 +186,47 @@ views:
     sections:
 
       - type: grid
-        column_span: 2
+        column_span: 4
         cards:
+
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: auto
+            apex_config:
+              chart:
+                height: 250px
+            header:
+              show: true
+              title: Electricity consumption 
+              show_states: true
+              colorize_states: true
+            graph_span: 1d
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 1h
+            yaxis:
+              - id: consumption
+                apex_config:
+                  title:
+                    show: true
+                    text: Consumption /kWh
+            series:
+              - entity: sensor.smart_meter_ts_65a_3_real_power
+                extend_to: false
+                name: Hourly consumption data
+                yaxis_id: consumption
+                show:
+                  in_brush: true
+
+
+
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -231,10 +270,6 @@ views:
                 show:
                   in_brush: true
 
-
-      - type: grid
-        column_span: 2
-        cards:
           - type: custom:apexcharts-card
             grid_options:
               columns: full
@@ -280,45 +315,6 @@ views:
 
 
 
-
-
-          - type: custom:apexcharts-card
-            grid_options:
-              columns: full
-              rows: auto
-            apex_config:
-              chart:
-                height: 250px
-            header:
-              show: true
-              title: Electricity consumption 
-              show_states: true
-              colorize_states: true
-            graph_span: 1d
-            now:
-              show: true
-              label: Now
-            hours_12: false
-            experimental:
-              brush: true
-            brush:
-              selection_span: 1h
-            yaxis:
-              - id: consumption
-                apex_config:
-                  title:
-                    show: true
-                    text: Consumption /kWh
-            series:
-              - entity: sensor.smart_meter_ts_65a_3_real_power
-                extend_to: false
-                name: Hourly consumption data
-                yaxis_id: consumption
-                show:
-                  in_brush: true
-
-
-
 #############################################################################
 #############################################################################
 ##                           Historic consumption                          ##
@@ -335,8 +331,107 @@ views:
 
 
     - type: grid
-      column_span: 2
+      column_span: 4
       cards:
+
+        - type: custom:apexcharts-card
+          grid_options:
+            columns: full
+            rows: auto
+          apex_config:
+            chart:
+              height: 450px
+          header:
+            show: true
+            title: Motorcycle Energy
+            show_states: true
+            colorize_states: true
+          graph_span: 365d
+          span:
+            start: day
+            offset: -365d
+          now:
+            show: true
+            label: Now
+          hours_12: false
+          experimental:
+            brush: true
+          brush:
+            selection_span: 7d
+          yaxis:
+            - apex_config:
+                title:
+                  show: true
+                  text: Daily Consumption /kWh
+          series:
+            - entity: sensor.clickhouse_daily_consumption_from_nrgi
+              extend_to: false
+              name: Net consumption
+              type: column
+              color: "#fa4042"
+              data_generator: |
+                const days = entity.attributes.day || [];
+                const vals = entity.attributes.consumption  || [];
+                return days.map((h, i) => [
+                  new Date(h).getTime(),
+                  Number(vals[i])
+                ])
+              show:
+                in_brush: true
+            - entity: sensor.clickhouse_daily_consumption_from_house
+              extend_to: false
+              name: House consumption
+              type: column
+              color: "#039be5"
+              data_generator: |
+                const days = entity.attributes.day || [];
+                const vals = entity.attributes.consumption  || [];
+                return days.map((h, i) => [
+                  new Date(h).getTime(),
+                  Number(vals[i])
+                ])
+
+            - entity: sensor.clickhouse_daily_generation_from_solarnet
+              extend_to: false
+              name: Solar generation
+              type: column
+              color: orange 
+              data_generator: |
+                const days = entity.attributes.day || [];
+                const vals = entity.attributes.consumption  || [];
+                return days.map((h, i) => [
+                  new Date(h).getTime(),
+                  Number(vals[i])
+                ])
+
+
+            - entity: sensor.clickhouse_daily_motorcycle_energy
+              extend_to: false
+              name: Motorcycle consumption 
+              type: column
+              color: purple
+              data_generator: |
+                const days = entity.attributes.day || [];
+                const vals = entity.attributes.energy || [];
+                return days.map((h, i) => [
+                  new Date(h).getTime(),
+                  Number(vals[i])
+                ])
+
+            - entity: sensor.clickhouse_daily_car_energy
+              extend_to: false
+              name: Car consumption
+              type: column
+              color: gray
+              data_generator: |
+                const days = entity.attributes.day || [];
+                const vals = entity.attributes.energy || [];
+                return days.map((h, i) => [
+                  new Date(h).getTime(),
+                  Number(vals[i])
+                ])
+
+
         - type: custom:apexcharts-card
           grid_options:
             columns: full
@@ -446,267 +541,155 @@ views:
                 return pts.map(p => [p[0], acc += p[1]]);
 
 
-    - type: grid
-      column_span: 2
-      cards:
-      - type: custom:apexcharts-card
-        grid_options:
-          columns: full
-          rows: auto
-        apex_config:
-          chart:
-            height: 550px
-          legend:
+        - type: custom:apexcharts-card
+          grid_options:
+            columns: full
+            rows: auto
+          apex_config:
+            chart:
+              height: 550px
+            legend:
+              show: true
+              position: bottom
+          header:
             show: true
-            position: bottom
-        header:
-          show: true
-          title: Monthly consumption by year (NRGI)
-        graph_span: 1yr
-        span:
-          start: year
-        yaxis:
-          - apex_config:
-              title:
-                show: true
-                text: Monthly Consumption /kWh
-        series:
-          - entity: sensor.clickhouse_monthly_consumption_from_nrgi
-            name: 2 years ago
-            type: column
-            data_generator: |
-              const months = entity.attributes.month || [];
-              const vals = entity.attributes.consumption || [];
-              const cur = new Date().getFullYear();
-              const src = cur - 2;
-              return months
-                .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
-                .filter(p => p[0] === src)
-                .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
-          - entity: sensor.clickhouse_monthly_consumption_from_nrgi
-            name: Last year
-            type: column
-            data_generator: |
-              const months = entity.attributes.month || [];
-              const vals = entity.attributes.consumption || [];
-              const cur = new Date().getFullYear();
-              const src = cur - 1;
-              return months
-                .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
-                .filter(p => p[0] === src)
-                .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
-          - entity: sensor.clickhouse_monthly_consumption_from_nrgi
-            name: This year
-            type: column
-            data_generator: |
-              const months = entity.attributes.month || [];
-              const vals = entity.attributes.consumption || [];
-              const cur = new Date().getFullYear();
-              const src = cur - 0;
-              return months
-                .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
-                .filter(p => p[0] === src)
-                .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
-
-    - type: grid
-      column_span: 4
-      cards:
-
-
-          - type: custom:apexcharts-card
-            grid_options:
-              columns: full
-              rows: auto
-            apex_config:
-              chart:
-                height: 450px
-            header:
-              show: true
-              title: Motorcycle Energy
-              show_states: true
-              colorize_states: true
-            graph_span: 365d
-            span:
-              start: day
-              offset: -365d
-            now:
-              show: true
-              label: Now
-            hours_12: false
-            experimental:
-              brush: true
-            brush:
-              selection_span: 7d
-            yaxis:
-              - apex_config:
-                  title:
-                    show: true
-                    text: Daily Consumption /kWh
-            series:
-              - entity: sensor.clickhouse_daily_consumption_from_nrgi
-                extend_to: false
-                name: Net consumption
-                type: column
-                color: "#fa4042"
-                data_generator: |
-                  const days = entity.attributes.day || [];
-                  const vals = entity.attributes.consumption  || [];
-                  return days.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ])
-                show:
-                  in_brush: true
-              - entity: sensor.clickhouse_daily_consumption_from_house
-                extend_to: false
-                name: House consumption
-                type: column
-                color: "#039be5"
-                data_generator: |
-                  const days = entity.attributes.day || [];
-                  const vals = entity.attributes.consumption  || [];
-                  return days.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ])
-
-              - entity: sensor.clickhouse_daily_generation_from_solarnet
-                extend_to: false
-                name: Solar generation
-                type: column
-                color: orange 
-                data_generator: |
-                  const days = entity.attributes.day || [];
-                  const vals = entity.attributes.consumption  || [];
-                  return days.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ])
-
-
-              - entity: sensor.clickhouse_daily_motorcycle_energy
-                extend_to: false
-                name: Motorcycle consumption 
-                type: column
-                color: purple
-                data_generator: |
-                  const days = entity.attributes.day || [];
-                  const vals = entity.attributes.energy || [];
-                  return days.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ])
-
-              - entity: sensor.clickhouse_daily_car_energy
-                extend_to: false
-                name: Car consumption
-                type: column
-                color: gray
-                data_generator: |
-                  const days = entity.attributes.day || [];
-                  const vals = entity.attributes.energy || [];
-                  return days.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ])
+            title: Monthly consumption by year (NRGI)
+          graph_span: 1yr
+          span:
+            start: year
+          yaxis:
+            - apex_config:
+                title:
+                  show: true
+                  text: Monthly Consumption /kWh
+          series:
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: 2 years ago
+              type: column
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 2;
+                return months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: Last year
+              type: column
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 1;
+                return months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
+            - entity: sensor.clickhouse_monthly_consumption_from_nrgi
+              name: This year
+              type: column
+              data_generator: |
+                const months = entity.attributes.month || [];
+                const vals = entity.attributes.consumption || [];
+                const cur = new Date().getFullYear();
+                const src = cur - 0;
+                return months
+                  .map((m, i) => [Number(m.slice(0, 4)), Number(m.slice(5, 7)), Number(vals[i])])
+                  .filter(p => p[0] === src)
+                  .map(p => [new Date(cur, p[1] - 1, 1).getTime(), p[2]]);
 
 
 
 
-    - type: grid
-      column_span: 2
-      cards:
-
-          - type: custom:apexcharts-card
-            grid_options:
-              columns: full
-              rows: auto
-            apex_config:
-              chart:
-                height: 250px
-            header:
-              show: true
-              title: Car Energy
-              show_states: true
-              colorize_states: true
-            graph_span: 14d
-            span:
-              start: day
-              offset: -14d
-            now:
-              show: true
-              label: Now
-            hours_12: false
-            experimental:
-              brush: true
-            brush:
-              selection_span: 1d
-            yaxis:
-              - apex_config:
-                  title:
-                    show: true
-                    text: Accumulated Hourly Consumption /kWh
-            series:
-              - entity: sensor.clickhouse_car_energy
-                extend_to: false
-                name: Car energy
-                data_generator: |
-                  const hours = entity.attributes.hour || [];
-                  const vals = entity.attributes.energy || [];
-                  return hours.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ])
-                show:
-                  in_brush: true
+        - type: custom:apexcharts-card
+          grid_options:
+            columns: full
+            rows: auto
+          apex_config:
+            chart:
+              height: 250px
+          header:
+            show: true
+            title: Car Energy
+            show_states: true
+            colorize_states: true
+          graph_span: 14d
+          span:
+            start: day
+            offset: -14d
+          now:
+            show: true
+            label: Now
+          hours_12: false
+          experimental:
+            brush: true
+          brush:
+            selection_span: 1d
+          yaxis:
+            - apex_config:
+                title:
+                  show: true
+                  text: Accumulated Hourly Consumption /kWh
+          series:
+            - entity: sensor.clickhouse_car_energy
+              extend_to: false
+              name: Car energy
+              data_generator: |
+                const hours = entity.attributes.hour || [];
+                const vals = entity.attributes.energy || [];
+                return hours.map((h, i) => [
+                  new Date(h).getTime(),
+                  Number(vals[i])
+                ])
+              show:
+                in_brush: true
 
 
-    - type: grid
-      column_span: 2
-      cards:
 
-          - type: custom:apexcharts-card
-            grid_options:
-              columns: full
-              rows: auto
-            apex_config:
-              chart:
-                height: 250px
-            header:
-              show: true
-              title: Motorcycle Energy
-              show_states: true
-              colorize_states: true
-            graph_span: 14d
-            span:
-              start: day
-              offset: -14d
-            now:
-              show: true
-              label: Now
-            hours_12: false
-            experimental:
-              brush: true
-            brush:
-              selection_span: 1d
-            yaxis:
-              - apex_config:
-                  title:
-                    show: true
-                    text: Accumulated Hourly Consumption /kWh
-            series:
-              - entity: sensor.clickhouse_motorcycle_energy
-                extend_to: false
-                name: Motorcycle energy
-                data_generator: |
-                  const hours = entity.attributes.hour || [];
-                  const vals = entity.attributes.energy || [];
-                  return hours.map((h, i) => [
-                    new Date(h).getTime(),
-                    Number(vals[i])
-                  ])
-                show:
-                  in_brush: true
+        - type: custom:apexcharts-card
+          grid_options:
+            columns: full
+            rows: auto
+          apex_config:
+            chart:
+              height: 250px
+          header:
+            show: true
+            title: Motorcycle Energy
+            show_states: true
+            colorize_states: true
+          graph_span: 14d
+          span:
+            start: day
+            offset: -14d
+          now:
+            show: true
+            label: Now
+          hours_12: false
+          experimental:
+            brush: true
+          brush:
+            selection_span: 1d
+          yaxis:
+            - apex_config:
+                title:
+                  show: true
+                  text: Accumulated Hourly Consumption /kWh
+          series:
+            - entity: sensor.clickhouse_motorcycle_energy
+              extend_to: false
+              name: Motorcycle energy
+              data_generator: |
+                const hours = entity.attributes.hour || [];
+                const vals = entity.attributes.energy || [];
+                return hours.map((h, i) => [
+                  new Date(h).getTime(),
+                  Number(vals[i])
+                ])
+              show:
+                in_brush: true
 
 
 
@@ -908,11 +891,11 @@ views:
     sections:
 
     - type: grid
-      column_span: 2
+      column_span: 4
       cards:
         - type: custom:apexcharts-card
           grid_options:
-            columns: 19
+            columns: 31
             rows: auto
           apex_config:
             chart:
@@ -1026,13 +1009,7 @@ views:
           grid_options:
             columns: 5
             rows: auto
-      grid_options:
-        columns: 5
-        rows: auto
 
-    - type: grid
-      column_span: 2
-      cards:
         - type: custom:apexcharts-card
           grid_options:
             columns: full
@@ -1096,9 +1073,6 @@ views:
                 in_header: false
                 legend_value: false
 
-    - type: grid
-      column_span: 2
-      cards:
         - type: custom:apexcharts-card
           grid_options:
             columns: full
@@ -1138,9 +1112,6 @@ views:
               show:
                 in_brush: true
 
-    - type: grid
-      column_span: 2
-      cards:
         - type: custom:apexcharts-card
           grid_options:
             columns: full
