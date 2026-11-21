@@ -523,6 +523,10 @@ views:
               show: true
               label: Now
             hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 1d
             series:
               - entity: sensor.clickhouse_car_energy
                 extend_to: false
@@ -534,6 +538,8 @@ views:
                     new Date(h).getTime(),
                     Number(vals[i])
                   ])
+                show:
+                  in_brush: true
 
 
     - type: grid
@@ -560,6 +566,10 @@ views:
               show: true
               label: Now
             hours_12: false
+            experimental:
+              brush: true
+            brush:
+              selection_span: 1d
             series:
               - entity: sensor.clickhouse_motorcycle_energy
                 extend_to: false
@@ -568,6 +578,89 @@ views:
                   const hours = entity.attributes.hour || [];
                   const vals = entity.attributes.energy || [];
                   return hours.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
+                show:
+                  in_brush: true
+
+
+
+    - type: grid
+      column_span: 2
+      cards:
+        - type: grid
+          column_span: 2
+          cards:
+
+          - type: custom:apexcharts-card
+            grid_options:
+              columns: full
+              rows: auto
+            apex_config:
+              chart:
+                height: 250px
+            header:
+              show: true
+              title: Motorcycle Energy
+              show_states: true
+              colorize_states: true
+            graph_span: 365d
+            span:
+              start: day
+              offset: -14d
+            now:
+              show: true
+              label: Now
+            hours_12: false
+            series:
+              - entity: sensor.clickhouse_daily_consumption_from_nrgi
+                extend_to: false
+                name: Net consumption
+                type: column
+                data_generator: |
+                  const days = entity.attributes.day || [];
+                  const vals = entity.attributes.consumption  || [];
+                  return days.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
+                show:
+                  in_brush: true
+
+              - entity: sensor.clickhouse_daily_generation_from_solarnet
+                extend_to: false
+                name: Net consumption
+                type: column
+                data_generator: |
+                  const days = entity.attributes.day || [];
+                  const vals = entity.attributes.consumption  || [];
+                  return days.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
+
+
+              - entity: sensor.clickhouse_daily_motorcycle_energy
+                extend_to: false
+                name: Motorcycle energy
+                type: column
+                data_generator: |
+                  const days = entity.attributes.day || [];
+                  const vals = entity.attributes.energy || [];
+                  return days.map((h, i) => [
+                    new Date(h).getTime(),
+                    Number(vals[i])
+                  ])
+
+              - entity: sensor.clickhouse_daily_car_energy
+                extend_to: false
+                name: Motorcycle energy
+                type: column
+                data_generator: |
+                  const days = entity.attributes.day || [];
+                  const vals = entity.attributes.energy || [];
+                  return days.map((h, i) => [
                     new Date(h).getTime(),
                     Number(vals[i])
                   ])

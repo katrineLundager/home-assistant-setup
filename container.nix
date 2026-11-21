@@ -282,6 +282,26 @@
             # per-hour consumption is last_value - first_value within the hour
             # (argMax/argMin by last_updated). Rows with state_float NULL
             # (entity "unavailable" while the Shelly sleeps) are excluded.
+            name = "ClickHouse Daily Car Energy";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
+            '';
+            value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            unit_of_measurement = "kWh";
+            json_attributes = [
+              "day"
+              "energy"
+            ];
+            scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
+            # Hourly energy delta for the Shelly motorcycle charger.
+            # motorcykel_output_energy is a monotonic total counter, so the
+            # per-hour consumption is last_value - first_value within the hour
+            # (argMax/argMin by last_updated). Rows with state_float NULL
+            # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Car Energy";
             command = ''
               ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
@@ -290,6 +310,26 @@
             unit_of_measurement = "kWh";
             json_attributes = [
               "hour"
+              "energy"
+            ];
+            scan_interval = 5;
+          };
+        }
+        {
+          sensor = {
+            # Hourly energy delta for the Shelly motorcycle charger.
+            # motorcykel_output_energy is a monotonic total counter, so the
+            # per-hour consumption is last_value - first_value within the hour
+            # (argMax/argMin by last_updated). Rows with state_float NULL
+            # (entity "unavailable" while the Shelly sleeps) are excluded.
+            name = "ClickHouse Daily Motorcycle Energy";
+            command = ''
+              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
+            '';
+            value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
+            unit_of_measurement = "kWh";
+            json_attributes = [
+              "day"
               "energy"
             ];
             scan_interval = 5;
