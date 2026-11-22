@@ -7,8 +7,12 @@ edition = "2021"
 serde_json = "1"
 
 [dependencies]
+chrono = { version = "0.4.45", features = ["serde"] }
 clickhouse = "0.15.3"
 config = "0.15.27"
+datetime = "0.5.2"
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1"
 tokio = { version = "1.54.1", features = ["rt-multi-thread"] }
+tracing = "0.1.44"

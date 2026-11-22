@@ -466,9 +466,13 @@
             # (default.sensor_0xfd01). TZ=... is required because the NixOS
             # clickhouse-client has no /usr/share/zoneinfo and fails on
             # DateTime values without it.
+            # The reader password is read at runtime from
+            # /run/ha-reader-password (rendered by ha-stack-reader-password
+            # .service from READER_PASSWORD) — never inline it here; this
+            # repo is public.
             name = "ClickHouse Lux 0xfd01";
             command = ''
-              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(lux) AS lux FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(lux) AS lux FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.lux | default([]) | last | default(0) }}";
             unit_of_measurement = "lux";
@@ -484,7 +488,7 @@
             # -> sensor.clickhouse_temperature_0xfd01
             name = "ClickHouse Temperature 0xfd01";
             command = ''
-              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(temperature) AS temperature FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(temperature) AS temperature FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
             unit_of_measurement = "°C";
@@ -500,7 +504,7 @@
             # -> sensor.clickhouse_temperature_0xfd01
             name = "ClickHouse Rain 0xfd01";
             command = ''
-              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password 'RtWyZAT6CiqaH9cY6RfdJfSi7E4urEiK' --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(rain_1hr) AS rain FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfHour(time), '%Y-%m-%dT%H:00:00') AS hour, avg(rain_1hr) AS rain FROM default.sensor_0xfd01 WHERE time >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
             unit_of_measurement = "0.01mm";
@@ -609,6 +613,29 @@
       "$CH" --host 127.0.0.1 --password "$DEFAULT_PASSWORD" --query "GRANT SELECT ON *.* TO reader"
       echo "Reader user created/updated"
 
+    '';
+  };
+
+  # Render the remote-station reader password into a file the `hass` user
+  # can read. The bind-mounted /run/secrets/clickhouse-passwords.env stays
+  # root:600, but the command_line sensors above run as `hass`, so they cat
+  # /run/ha-reader-password instead. This keeps the secret out of both the
+  # public repo and the world-readable Nix store.
+  systemd.services.ha-stack-reader-password = {
+    description = "Render reader password readable by Home Assistant";
+    before = [ "home-assistant.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      umask 077
+      . /run/secrets/clickhouse-passwords.env
+      : "''${READER_PASSWORD:?READER_PASSWORD is not set in /run/secrets/clickhouse-passwords.env}"
+      printf '%s' "$READER_PASSWORD" > /run/ha-reader-password
+      chown hass: /run/ha-reader-password
+      chmod 400 /run/ha-reader-password
     '';
   };
 
