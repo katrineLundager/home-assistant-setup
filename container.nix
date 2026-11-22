@@ -58,6 +58,9 @@
     #      }];
     #    };
 
+    extraConfig = ''
+      ln -sf ${./home-assistant-dashboard.yaml} /var/lib/hass/ui-lovelace.yaml
+    '';
     lovelaceConfigFile = ./home-assistant-dashboard.yaml;
 
     config = {
