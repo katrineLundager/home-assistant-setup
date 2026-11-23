@@ -69,10 +69,6 @@ in
     #    };
 
     lovelaceConfigFile = ./home-assistant-dashboard.yaml;
-    extraConfig = ''
-    mkdir -p /etc/home-assistant
-    cp ${./home-assistant-dashboard.yaml} /etc/home-assistant/ui-lovelace.yaml
-  '';
 
     config = {
       default_config = { };
