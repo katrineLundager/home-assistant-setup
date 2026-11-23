@@ -106,7 +106,7 @@ in
             # not be extrapolated across the whole gap — gap intervals
             # contribute 0 energy instead.
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT day, sum(consumption) AS consumption FROM (SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day UNION ALL SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT day, w, dt FROM (SELECT toDate(last_updated) AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toDate(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) WHERE dt <= 300) GROUP BY day) GROUP BY day ORDER BY day"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT day, sum(consumption) AS consumption FROM (SELECT toDate(last_updated) AS day, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY day UNION ALL SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT day, w, dt FROM (SELECT toDate(last_updated) AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toDate(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) WHERE dt <= 300) GROUP BY day) GROUP BY day ORDER BY day FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) | round(2) }}";
             unit_of_measurement = "kWh";
@@ -126,7 +126,7 @@ in
             # per month (watts x seconds until next sample / 3.6e6),
             # with the same explicit-window-frame fix as the daily query.
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT month, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' GROUP BY month UNION ALL SELECT month, sum(w * dt) / 3600000 AS consumption FROM (SELECT month, w, dt FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfMonth(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL) WHERE dt <= 300) GROUP BY month) GROUP BY month ORDER BY month"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT month, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' GROUP BY month UNION ALL SELECT month, sum(w * dt) / 3600000 AS consumption FROM (SELECT month, w, dt FROM (SELECT formatDateTime(toStartOfMonth(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS month, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfMonth(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL) WHERE dt <= 300) GROUP BY month) GROUP BY month ORDER BY month FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) | round(2) }}";
             unit_of_measurement = "kWh";
@@ -146,7 +146,7 @@ in
             # per hour (watts x seconds until next sample / 3.6e6),
             # with the same explicit-window-frame fix as the daily query.
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour UNION ALL SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT hour, w, dt FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) WHERE dt <= 300) GROUP BY hour) GROUP BY hour ORDER BY hour"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT hour, sum(consumption) AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, sum(state_float) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.clickhouse_main_consumption_nrgi' AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour UNION ALL SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT hour, w, dt FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.smart_meter_ts_65a_3_real_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) WHERE dt <= 300) GROUP BY hour) GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
 
@@ -171,7 +171,7 @@ in
             # instead of NULL; greatest(..., 0) neutralizes it.
             name = "ClickHouse Daily Consumption From House";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT day, sum(consumption) AS consumption FROM (SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfDay(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_load_consumed' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY) WHERE dt <= 300 GROUP BY day) GROUP BY day ORDER BY day"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT day, sum(consumption) AS consumption FROM (SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfDay(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_load_consumed' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY) WHERE dt <= 300 GROUP BY day) GROUP BY day ORDER BY day FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -196,7 +196,7 @@ in
             # instead of NULL; greatest(..., 0) neutralizes it.
             name = "ClickHouse Daily Generation From SolarNet";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT day, sum(consumption) AS consumption FROM (SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfDay(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY) WHERE dt <= 300 GROUP BY day) GROUP BY day ORDER BY day"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT day, sum(consumption) AS consumption FROM (SELECT day, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfDay(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY) WHERE dt <= 300 GROUP BY day) GROUP BY day ORDER BY day FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -221,7 +221,7 @@ in
             # instead of NULL; greatest(..., 0) neutralizes it.
             name = "ClickHouse Hourly Generation From SolarNet";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT hour, sum(consumption) AS consumption FROM (SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) WHERE dt <= 300 GROUP BY hour) GROUP BY hour ORDER BY hour"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT hour, sum(consumption) AS consumption FROM (SELECT hour, sum(w * dt) / 3600000 AS consumption FROM (SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (PARTITION BY toStartOfHour(last_updated) ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY) WHERE dt <= 300 GROUP BY hour) GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -247,7 +247,7 @@ in
             # rejects and the sensor is stuck in unknown.
             name = "ClickHouse Todays Generation From SolarNet";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT sum(w * dt) / 3600000 AS consumption FROM (SELECT state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= toStartOfDay(now())) WHERE dt <= 300"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT sum(w * dt) / 3600000 AS consumption FROM (SELECT state_float AS w, greatest(dateDiff('second', last_updated, leadInFrame(last_updated) OVER (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)), 0) AS dt FROM homeassistant.states WHERE entity_id = 'sensor.solarnet_power_photovoltaics' AND state_float IS NOT NULL AND last_updated >= toStartOfDay(now())) WHERE dt <= 300 FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) | round(2) }}";
             unit_of_measurement = "kWh";
@@ -260,7 +260,7 @@ in
             # attribute (the ingestor stores full attributes as JSON).
             name = "ClickHouse Sun Elevation";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'elevation')) AS elevation FROM homeassistant.states WHERE entity_id = 'sun.sun' AND JSONHas(attributes, 'elevation') AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'elevation')) AS elevation FROM homeassistant.states WHERE entity_id = 'sun.sun' AND JSONHas(attributes, 'elevation') AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.elevation | default([]) | last | default(0) }}";
             unit_of_measurement = "°";
@@ -277,7 +277,7 @@ in
             # attribute — it lives on the weather entity.
             name = "ClickHouse Temperature";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'temperature')) AS temperature FROM homeassistant.states WHERE entity_id = 'weather.forecast_home' AND JSONHas(attributes, 'temperature') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, avg(JSONExtractFloat(attributes, 'temperature')) AS temperature FROM homeassistant.states WHERE entity_id = 'weather.forecast_home' AND JSONHas(attributes, 'temperature') AND last_updated >= now() - INTERVAL 7 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.temperature | default([]) | last | default(0) }}";
             unit_of_measurement = "°C";
@@ -300,7 +300,7 @@ in
             # dashboard data_generator does JSON.parse() on them.
             name = "ClickHouse Nordpool Price";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT state_float AS price, JSONExtractRaw(attributes, 'raw_today') AS raw_today, JSONExtractRaw(attributes, 'raw_tomorrow') AS raw_tomorrow, JSONExtractRaw(attributes, 'today') AS today, JSONExtractRaw(attributes, 'tomorrow') AS tomorrow FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated <= now() ORDER BY last_updated DESC LIMIT 1"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT state_float AS price, JSONExtractRaw(attributes, 'raw_today') AS raw_today, JSONExtractRaw(attributes, 'raw_tomorrow') AS raw_tomorrow, JSONExtractRaw(attributes, 'today') AS today, JSONExtractRaw(attributes, 'tomorrow') AS tomorrow FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated <= now() ORDER BY last_updated DESC LIMIT 1 FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.price | default(0) }}";
             unit_of_measurement = "DKK/kWh";
@@ -327,7 +327,7 @@ in
             # "hour" for the dashboard data_generator.
             name = "ClickHouse Nordpool History";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfFifteenMinutes(last_updated), '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY GROUP BY hour ORDER BY hour"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfFifteenMinutes(last_updated), '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS hour, avg(state_float) AS price FROM homeassistant.states WHERE entity_id = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 31 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.price | default([]) | last | default(0) }}";
             unit_of_measurement = "DKK/kWh";
@@ -348,7 +348,7 @@ in
             # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Daily Car Energy";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -368,7 +368,7 @@ in
             # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Car Energy";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_lifetime_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -388,7 +388,7 @@ in
             # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Daily Motorcycle Energy";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfDay(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS day, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 365 DAY GROUP BY day ORDER BY day FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -408,7 +408,7 @@ in
             # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Motorcycle Energy";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfHour(last_updated), '%Y-%m-%dT%H:00:00', 'Europe/Copenhagen') AS hour, argMax(state_float, last_updated) AS energy FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 14 DAY GROUP BY hour ORDER BY hour FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -438,7 +438,7 @@ in
             # NOTE: %i is minutes in ClickHouse formatDateTime (%M = month).
             name = "ClickHouse Car Consumption";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(s.m, '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, s.kwh AS consumption FROM (SELECT toStartOfMinute(last_updated) AS m, sum(if(next_ts > last_updated, state_float * dateDiff('second', last_updated, next_ts), 0) / 3600 / 1000) AS kwh FROM (SELECT last_updated, state_float, leadInFrame(last_updated) OVER w AS next_ts FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR WINDOW w AS (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)) AS d GROUP BY m) AS s ORDER BY m"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(s.m, '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, s.kwh AS consumption FROM (SELECT toStartOfMinute(last_updated) AS m, sum(if(next_ts > last_updated, state_float * dateDiff('second', last_updated, next_ts), 0) / 3600 / 1000) AS kwh FROM (SELECT last_updated, state_float, leadInFrame(last_updated) OVER w AS next_ts FROM homeassistant.states WHERE entity_id = 'sensor.peblar_ev_charger_power' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR WINDOW w AS (ORDER BY last_updated ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING)) AS d GROUP BY m) AS s ORDER BY m FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
@@ -458,7 +458,7 @@ in
             # (entity "unavailable" while the Shelly sleeps) are excluded.
             name = "ClickHouse Motorcycle Consumption";
             command = ''
-              ${pkgs.curl}/bin/curl -s 'http://127.0.0.1:8124/?user=lovelace&default_format=JSONColumns' --data "SELECT formatDateTime(toStartOfMinute(last_updated), '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR GROUP BY minute ORDER BY minute"
+              TZ=Europe/Copenhagen ${pkgs.clickhouse}/bin/clickhouse-client --host 192.168.1.194 --port 9000 --user reader --password "$(cat /run/ha-reader-password)" --query "SELECT formatDateTime(toStartOfMinute(last_updated), '%Y-%m-%dT%H:%i:00', 'Europe/Copenhagen') AS minute, argMax(state_float, last_updated) - argMin(state_float, last_updated) AS consumption FROM homeassistant.states WHERE entity_id = 'sensor.motorcykel_output_energy' AND state_float IS NOT NULL AND last_updated >= now() - INTERVAL 48 HOUR GROUP BY minute ORDER BY minute FORMAT JSONColumns"
             '';
             value_template = "{{ value_json.consumption | default([]) | last | default(0) }}";
             unit_of_measurement = "kWh";
