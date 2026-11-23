@@ -131,6 +131,7 @@ requires a password.
 sudo mkdir -p /var/lib/secrets
 echo "DEFAULT_PASSWORD=<superuser password>" | sudo tee /var/lib/secrets/clickhouse-passwords.env >/dev/null
 echo "READER_PASSWORD=<read-only password>" | sudo tee -a /var/lib/secrets/clickhouse-passwords.env >/dev/null
+echo "WRITER_PASSWORD=<ingestor password>" | sudo tee -a /var/lib/secrets/clickhouse-passwords.env >/dev/null
 sudo chmod 600 /var/lib/secrets/clickhouse-passwords.env
 ```
 

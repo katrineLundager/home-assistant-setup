@@ -8,6 +8,16 @@
 
 { pkgs, lib, ... }:
 
+let
+  ingestor = pkgs.callPackage ./clickhouse-ingestor.nix { };
+  # Sources WRITER_PASSWORD at start time from the shared secrets env so the
+  # password never lands in the world-readable Nix store.
+  ingestorStart = pkgs.writeShellScript "clickhouse-ingestor-start" ''
+    . /run/secrets/clickhouse-passwords.env
+    export CLICKHOUSE_PASSWORD="''${WRITER_PASSWORD:?WRITER_PASSWORD is not set in /run/secrets/clickhouse-passwords.env}"
+    exec ${ingestor}/bin/clickhouse-ingestor
+  '';
+in
 {
   system.stateVersion = "26.05";
 
@@ -652,7 +662,7 @@
     ];
 
     serviceConfig = {
-      ExecStart = "${pkgs.callPackage ./clickhouse-ingestor.nix { }}/bin/clickhouse-ingestor";
+      ExecStart = "${ingestorStart}";
       Restart = "always";
       RestartSec = 10;
       EnvironmentFile = "/run/secrets/clickhouse-ingestor.env";
@@ -661,13 +671,14 @@
     environment = {
       # HA WebSocket inside the container
       HA_WS_URL = "ws://localhost:8123/api/websocket";
-      # ClickHouse HTTP inside the container (port 8124, not 8123)
-      CLICKHOUSE_HOST = "127.0.0.1";
-      CLICKHOUSE_PORT = "8124";
-      CLICKHOUSE_USER = "default";
-      # CLICKHOUSE_PASSWORD comes from /run/secrets/clickhouse-ingestor.env
-      # (EnvironmentFile). Set it to the same value as DEFAULT_PASSWORD in
-      # /var/lib/secrets/clickhouse-passwords.env.
+      # External ClickHouse in databaseContainer (192.168.1.194), HTTP port.
+      CLICKHOUSE_HOST = "192.168.1.194";
+      CLICKHOUSE_PORT = "8123";
+      CLICKHOUSE_USER = "writer";
+      # CLICKHOUSE_PASSWORD comes from WRITER_PASSWORD in
+      # /run/secrets/clickhouse-passwords.env via the ExecStart wrapper.
+      # The writer user is created by the database container's
+      # clickhouse-set-passwords service (CREATE/INSERT on homeassistant.*).
       CLICKHOUSE_DATABASE = "homeassistant";
       CLICKHOUSE_TABLE = "states";
       # Tuning
