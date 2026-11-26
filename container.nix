@@ -528,25 +528,33 @@ in
       ];
 
       # Workaround for the nordpool component not picking up day-ahead
-      # prices (custom-components/nordpool issues #528 / #539): prices
-      # publish ~13:00 CET, but the integration often keeps a stale/empty
-      # raw_tomorrow until restarted. If tomorrow's prices are still
-      # missing after publication, reload the config entry — the same
-      # fresh fetch a container rebuild forces. Second trigger at 14:30
-      # covers late publications (Nordpool can delay to ~14:00).
+      # prices (custom-components/nordpool issues #528 / #539): the
+      # integration dies on the midnight rollover and freezes with stale
+      # (non-empty) attributes, or keeps an empty tomorrow after the
+      # ~13:00 CET publication, or goes unavailable (boot-time DNS).
+      # A template trigger fires within a minute of any of those states,
+      # like the upstream blueprint from erlendsellie referenced in #539.
+      # The template cannot detect the midnight freeze (stale attributes
+      # look valid), so a 00:05 reload covers it unconditionally.
       automation = [
         {
-          alias = "Reload Nordpool for tomorrow prices";
+          alias = "Reload Nordpool when broken";
           id = "nordpool_reload_tomorrow";
+          mode = "single";
+          max_exceeded = "silent";
           triggers = [
-            { trigger = "time"; at = "13:30:00"; }
-            { trigger = "time"; at = "14:30:00"; }
-          ];
-          conditions = [
             {
-              condition = "template";
-              value_template = "{{ state_attr('sensor.nordpool_kwh_dk1_dkk_3_10_0', 'raw_tomorrow') in (none, []) }}";
+              trigger = "template";
+              value_template = ''
+                {% set entity = 'sensor.nordpool_kwh_dk1_dkk_3_10_0' %}
+                {% set broken = states(entity) in ('unknown', 'unavailable') %}
+                {% set tomorrow = state_attr(entity, 'tomorrow') %}
+                {% set missing = now().hour >= 13 and (tomorrow is none or tomorrow | length == 0) %}
+                {{ broken or missing }}
+              '';
+              for = "00:01:00";
             }
+            { trigger = "time"; at = "00:05:00"; }
           ];
           actions = [
             {
